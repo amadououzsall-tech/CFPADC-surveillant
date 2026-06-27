@@ -1,0 +1,1639 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CFPADC — Surveillant Général v2</title>
+<style>
+:root{--violet:#5C3D6E;--violet-dark:#3D2449;--violet-light:#7B5492;--violet-pale:#EDE4F3;--violet-xpale:#F7F2FB;--white:#fff;--gray-50:#F9F8FA;--gray-100:#F0EDF4;--gray-200:#DDD6E8;--gray-300:#C4B8D4;--gray-400:#9A8AB0;--gray-600:#6B5C80;--gray-800:#2D2040;--success:#2D7A4F;--success-bg:#EAF4EE;--danger:#9B2335;--danger-bg:#FCEDEF;--warning:#7A5C1E;--warning-bg:#FDF3DC;--info:#1A5F8A;--info-bg:#E4F2FB;--radius:10px;--radius-sm:6px}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--gray-50);color:var(--gray-800);min-height:100vh}
+.shell{display:flex;height:100vh;overflow:hidden}
+.sidebar{width:230px;background:var(--violet-dark);display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto}
+.sidebar-logo{padding:16px 14px 12px;border-bottom:1px solid rgba(255,255,255,.1)}
+.logo-adc{font-size:26px;font-weight:800;color:#fff;letter-spacing:-1px}.logo-adc span{color:#C4A8E0}
+.logo-sub{font-size:9.5px;color:rgba(255,255,255,.55);line-height:1.5;margin-top:3px}.logo-sub strong{color:rgba(255,255,255,.9);font-size:10.5px}
+.sidebar-user{padding:10px 14px;display:flex;align-items:center;gap:8px;border-bottom:1px solid rgba(255,255,255,.1)}
+.user-avatar{width:32px;height:32px;border-radius:50%;background:var(--violet-light);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:#fff;flex-shrink:0}
+.user-name{font-size:12px;font-weight:600;color:#fff}.user-role{font-size:10px;color:rgba(255,255,255,.45)}
+.nav{flex:1;padding:10px 8px}
+.nav-sec{font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,.3);padding:8px 8px 3px;margin-top:6px}
+.nav-item{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:6px;cursor:pointer;color:rgba(255,255,255,.6);font-size:12.5px;transition:all .15s;margin-bottom:1px}
+.nav-item:hover{background:rgba(255,255,255,.08);color:#fff}
+.nav-item.active{background:rgba(255,255,255,.15);color:#fff;font-weight:500}
+.nav-badge{margin-left:auto;background:var(--danger);color:#fff;font-size:10px;font-weight:600;padding:1px 6px;border-radius:99px}
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+.topbar{background:#fff;border-bottom:1px solid var(--gray-200);padding:0 18px;height:52px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.topbar-title{font-size:14px;font-weight:600;color:var(--gray-800)}
+.topbar-date{font-size:11px;color:var(--gray-400)}
+.topbar-right{display:flex;align-items:center;gap:10px}
+.sync-status{font-size:11px;color:var(--gray-400);display:flex;align-items:center;gap:4px}
+.sync-dot{width:6px;height:6px;border-radius:50%;background:var(--success)}
+.sync-dot.pending{background:var(--warning)}
+.btn-sync{display:flex;align-items:center;gap:5px;background:var(--violet);color:#fff;border:none;border-radius:6px;padding:6px 13px;font-size:11.5px;font-weight:500;cursor:pointer;transition:background .15s}
+.btn-sync:hover{background:var(--violet-dark)}
+.content{flex:1;overflow-y:auto;padding:18px}
+.page{display:none}.page.active{display:block}
+/* STATS */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
+.stat-card{background:#fff;border:1px solid var(--gray-200);border-radius:var(--radius);padding:13px 15px}
+.stat-val{font-size:24px;font-weight:700;line-height:1}.stat-val.green{color:var(--success)}.stat-val.red{color:var(--danger)}.stat-val.amber{color:var(--warning)}.stat-val.purple{color:var(--violet)}
+.stat-label{font-size:11px;color:var(--gray-400);margin-top:3px}.stat-sub{font-size:10px;color:var(--gray-300);margin-top:1px}
+/* CARDS */
+.card{background:#fff;border:1px solid var(--gray-200);border-radius:var(--radius);padding:15px;margin-bottom:13px}
+.card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.card-title{font-size:13px;font-weight:600;color:var(--gray-800);display:flex;align-items:center;gap:7px}
+.card-title .icon{font-size:15px;color:var(--violet)}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:13px}
+.three-col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:13px}
+/* BADGES */
+.badge{font-size:10.5px;padding:2px 8px;border-radius:99px;font-weight:500;white-space:nowrap}
+.badge-present{background:var(--success-bg);color:var(--success)}
+.badge-absent{background:var(--danger-bg);color:var(--danger)}
+.badge-retard{background:var(--warning-bg);color:var(--warning)}
+.badge-justifie{background:var(--info-bg);color:var(--info)}
+.badge-purple{background:var(--violet-pale);color:var(--violet-dark)}
+.badge-th{background:#E8F0FE;color:#1A55A3}
+.badge-pr{background:#FFF0E8;color:#A35A1A}
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:5px;padding:6px 13px;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;border:none;transition:all .15s}
+.btn-primary{background:var(--violet);color:#fff}.btn-primary:hover{background:var(--violet-dark)}
+.btn-ghost{background:#fff;color:var(--gray-600);border:1px solid var(--gray-200)}.btn-ghost:hover{background:var(--gray-100)}
+.btn-sm{padding:4px 9px;font-size:11px}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+/* FORMS */
+input,select,textarea{font-family:inherit;font-size:12.5px;border:1px solid var(--gray-200);border-radius:6px;padding:7px 9px;color:var(--gray-800);background:#fff;outline:none;transition:border .15s;width:100%}
+input:focus,select:focus,textarea:focus{border-color:var(--violet-light)}
+textarea{resize:vertical;min-height:65px}
+label{font-size:11.5px;color:var(--gray-600);display:block;margin-bottom:3px;font-weight:500}
+.form-group{margin-bottom:10px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:10px}
+.form-row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px;margin-bottom:10px}
+/* TABLES */
+.tbl{width:100%;border-collapse:collapse;font-size:12.5px}
+.tbl th{text-align:left;font-size:10.5px;font-weight:600;color:var(--gray-400);padding:7px 9px;border-bottom:1px solid var(--gray-200);text-transform:uppercase;letter-spacing:.04em}
+.tbl td{padding:8px 9px;border-bottom:1px solid var(--gray-100);vertical-align:middle}
+.tbl tr:last-child td{border-bottom:none}
+.tbl tr:hover td{background:var(--gray-50)}
+/* ALERTS */
+.alert{display:flex;align-items:flex-start;gap:9px;padding:9px 11px;border-radius:6px;margin-bottom:7px;font-size:12px}
+.alert-danger{background:var(--danger-bg);color:var(--danger)}
+.alert-warning{background:var(--warning-bg);color:var(--warning)}
+.alert-info{background:var(--info-bg);color:var(--info)}
+.alert-success{background:var(--success-bg);color:var(--success)}
+.alert .ai{font-size:14px;flex-shrink:0;margin-top:1px}
+/* PROGRESS */
+.prog-bg{height:5px;background:var(--gray-100);border-radius:99px;overflow:hidden}
+.prog-fill{height:5px;border-radius:99px;transition:width .4s}
+.prog-pct{font-size:10.5px;color:var(--gray-400);text-align:right;margin-top:2px}
+/* AVATAR */
+.avatar{width:30px;height:30px;border-radius:50%;background:var(--violet-pale);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;color:var(--violet-dark);flex-shrink:0}
+/* STATUS SELECT */
+.sel-status{font-size:11px;border:1px solid var(--gray-200);border-radius:99px;padding:3px 7px;cursor:pointer;font-weight:500}
+.sel-status.present{background:var(--success-bg);color:var(--success);border-color:transparent}
+.sel-status.absent{background:var(--danger-bg);color:var(--danger);border-color:transparent}
+.sel-status.retard{background:var(--warning-bg);color:var(--warning);border-color:transparent}
+/* EDT */
+.edt-wrapper{overflow-x:auto}
+.edt-grid{display:grid;gap:3px;min-width:680px}
+.edt-head{background:var(--gray-100);border-radius:4px;padding:5px 4px;text-align:center;font-size:10.5px;font-weight:600;color:var(--gray-600)}
+.edt-time{background:var(--violet-xpale);border-radius:4px;padding:5px;text-align:center;font-size:10px;color:var(--violet);font-weight:600}
+.edt-cell{border-radius:4px;padding:5px 4px;text-align:center;font-size:10px;min-height:42px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:opacity .15s;line-height:1.3}
+.edt-cell:hover{opacity:.8}
+.edt-empty{background:var(--gray-50);border-radius:4px;min-height:42px;border:1px dashed var(--gray-200);cursor:pointer}
+.edt-empty:hover{background:var(--violet-xpale);border-color:var(--violet-pale)}
+.c1{background:var(--violet-pale);color:var(--violet-dark)}
+.c2{background:#E1F5EE;color:#085041}
+.c3{background:#FAEEDA;color:#633806}
+.c4{background:#FAECE7;color:#712B13}
+.c5{background:#E6F1FB;color:#0C447C}
+/* IA */
+.ia-result{background:var(--gray-50);border:1px solid var(--gray-200);border-radius:6px;padding:13px;font-size:12.5px;line-height:1.7;min-height:90px;white-space:pre-wrap;word-break:break-word}
+.ia-placeholder{color:var(--gray-300);font-style:italic;font-size:12px}
+.dots{display:inline-flex;gap:3px}
+.dots span{width:4px;height:4px;background:var(--violet-light);border-radius:50%;animation:pulse 1s infinite}
+.dots span:nth-child(2){animation-delay:.15s}.dots span:nth-child(3){animation-delay:.3s}
+@keyframes pulse{0%,80%,100%{opacity:.3;transform:scale(.8)}40%{opacity:1;transform:scale(1)}}
+.quick-btns{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:11px}
+.quick-btn{font-size:11px;padding:4px 9px;border:1px solid var(--gray-200);border-radius:99px;background:#fff;cursor:pointer;color:var(--gray-600);transition:all .15s}
+.quick-btn:hover{background:var(--violet-pale);border-color:var(--violet-light);color:var(--violet)}
+/* SUBTABS */
+.subtabs{display:flex;border-bottom:1px solid var(--gray-200);margin-bottom:14px}
+.subtab{padding:8px 15px;font-size:12.5px;cursor:pointer;color:var(--gray-400);border-bottom:2px solid transparent;transition:all .15s}
+.subtab:hover{color:var(--gray-800)}
+.subtab.active{color:var(--violet);border-bottom-color:var(--violet);font-weight:500}
+/* MODAL */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:100;align-items:center;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal{background:#fff;border-radius:var(--radius);padding:18px;width:460px;max-width:95vw;max-height:90vh;overflow-y:auto}
+.modal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.modal-title{font-size:13.5px;font-weight:600;color:var(--gray-800)}
+.modal-close{background:none;border:none;cursor:pointer;color:var(--gray-400);font-size:20px;line-height:1}
+.modal-footer{display:flex;justify-content:flex-end;gap:7px;margin-top:14px;padding-top:11px;border-top:1px solid var(--gray-200)}
+/* HEURES */
+.heures-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px}
+.heures-box{background:var(--gray-50);border:1px solid var(--gray-200);border-radius:6px;padding:10px;text-align:center}
+.heures-box .hval{font-size:20px;font-weight:700;color:var(--gray-800)}
+.heures-box .hlbl{font-size:10px;color:var(--gray-400);margin-top:2px}
+.heures-box.th .hval{color:#1A55A3}
+.heures-box.pr .hval{color:#A35A1A}
+.heures-box.tot .hval{color:var(--violet)}
+/* CAHIER TEXTE */
+.ct-entry{padding:10px 0;border-bottom:1px solid var(--gray-100)}
+.ct-entry:last-child{border-bottom:none}
+.ct-header{display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap}
+.ct-date{font-size:11px;font-weight:600;color:var(--violet);background:var(--violet-xpale);padding:2px 7px;border-radius:99px}
+.ct-heure{font-size:11px;color:var(--gray-400)}
+.ct-matiere{font-size:11px;font-weight:500;color:var(--gray-600)}
+.ct-contenu{font-size:12.5px;color:var(--gray-800);line-height:1.6;margin-top:3px}
+.ct-type{font-size:10px;padding:2px 6px;border-radius:99px;font-weight:600}
+.ct-type.th{background:#E8F0FE;color:#1A55A3}
+.ct-type.pr{background:#FFF0E8;color:#A35A1A}
+/* NOTES */
+.notes-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:10px}
+.note-box{background:var(--gray-50);border:1px solid var(--gray-200);border-radius:6px;padding:8px;text-align:center}
+.note-box .nval{font-size:18px;font-weight:700}
+.note-box .nmat{font-size:10px;color:var(--gray-400);margin-top:2px;line-height:1.3}
+.note-box.bon .nval{color:var(--success)}
+.note-box.moyen .nval{color:var(--warning)}
+.note-box.faible .nval{color:var(--danger)}
+/* ABSENCES DETAIL */
+.abs-detail-row{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--gray-100);font-size:12px}
+.abs-detail-row:last-child{border-bottom:none}
+.abs-date{font-size:11px;color:var(--gray-400);min-width:80px}
+.abs-cours{font-size:12px;color:var(--gray-800);flex:1}
+.abs-justif{font-size:11px;color:var(--info)}
+/* WEEK NAV */
+.week-nav{display:flex;align-items:center;gap:7px}
+.week-nav button{background:none;border:1px solid var(--gray-200);border-radius:4px;padding:3px 8px;cursor:pointer;color:var(--gray-600);font-size:12px}
+.week-nav span{font-size:12px;font-weight:500;color:var(--gray-600);min-width:130px;text-align:center}
+/* SCROLLBAR */
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-thumb{background:var(--gray-200);border-radius:99px}
+@media print{.sidebar,.topbar,.btn-sync,.quick-btns,.modal-overlay{display:none!important}.main{overflow:visible}.content{padding:0;overflow:visible}.page{display:block!important}}
+</style>
+</head>
+<body>
+<div class="shell">
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-adc">A<span>D</span>C</div>
+    <div class="logo-sub">centre de formation professionnelle<br>atelier des chefs<br><strong>CFPADC</strong></div>
+  </div>
+  <div class="sidebar-user">
+    <div class="user-avatar">SG</div>
+    <div><div class="user-name">Surveillant Général</div><div class="user-role">Saint-Louis, Sénégal</div></div>
+  </div>
+  <nav class="nav">
+    <div class="nav-sec">Tableau de bord</div>
+    <div class="nav-item active" onclick="showPage('accueil',this)">🏠 Accueil</div>
+    <div class="nav-sec">Surveillance</div>
+    <div class="nav-item" onclick="showPage('presences',this)">📋 Présences apprenants <span class="nav-badge" id="nb-absent">0</span></div>
+    <div class="nav-item" onclick="showPage('professeurs',this)">👨‍🏫 Suivi professeurs</div>
+    <div class="nav-sec">Emploi du temps</div>
+    <div class="nav-item" onclick="showPage('edt-general',this)">📅 EDT général</div>
+    <div class="nav-item" onclick="showPage('edt-profs',this)">🗓️ EDT par professeur</div>
+    <div class="nav-item" onclick="showPage('edt-classes',this)">🎓 EDT par classe</div>
+    <div class="nav-sec">Pédagogie</div>
+    <div class="nav-item" onclick="showPage('cahier',this)">📖 Cahier de texte</div>
+    <div class="nav-item" onclick="showPage('notes',this)">📝 Notes & évaluations</div>
+    <div class="nav-sec">Documents</div>
+    <div class="nav-item" onclick="showPage('ia',this)">✨ Assistant IA</div>
+    <div class="nav-item" onclick="showPage('rapports',this)">📊 Rapports & exports</div>
+    <div class="nav-sec">Configuration</div>
+    <div class="nav-item" onclick="showPage('config',this)">⚙️ Paramètres</div>
+  </nav>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="topbar">
+    <div style="display:flex;align-items:center;gap:12px;">
+      <div class="topbar-title" id="page-title">Tableau de bord</div>
+      <div class="topbar-date" id="today-display"></div>
+    </div>
+    <div class="topbar-right">
+      <div class="sync-status"><div class="sync-dot" id="sync-dot"></div><span id="sync-label">Synchronisé</span></div>
+      <button class="btn-sync" onclick="syncSheets()">↑ Sync Google Sheets</button>
+    </div>
+  </div>
+
+  <div class="content">
+
+  <!-- ACCUEIL -->
+  <div class="page active" id="page-accueil">
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-val green" id="d-present">—</div><div class="stat-label">Présents</div><div class="stat-sub" id="d-taux">—</div></div>
+      <div class="stat-card"><div class="stat-val red" id="d-absent">—</div><div class="stat-label">Absents</div></div>
+      <div class="stat-card"><div class="stat-val amber" id="d-retard">—</div><div class="stat-label">Retards</div></div>
+      <div class="stat-card"><div class="stat-val purple" id="d-profs">—</div><div class="stat-label">Profs présents</div></div>
+    </div>
+    <div class="two-col">
+      <div class="card"><div class="card-head"><div class="card-title"><span class="icon">⚠️</span>Alertes du jour</div></div><div id="d-alerts"></div></div>
+      <div class="card"><div class="card-head"><div class="card-title"><span class="icon">🕐</span>Activité récente</div></div><div id="d-historique"></div></div>
+    </div>
+  </div>
+
+  <!-- PRÉSENCES -->
+  <div class="page" id="page-presences">
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-val green" id="p-present">0</div><div class="stat-label">Présents</div></div>
+      <div class="stat-card"><div class="stat-val red" id="p-absent">0</div><div class="stat-label">Absents</div></div>
+      <div class="stat-card"><div class="stat-val amber" id="p-retard">0</div><div class="stat-label">Retards</div></div>
+      <div class="stat-card"><div class="stat-val purple" id="p-taux">0%</div><div class="stat-label">Taux présence</div></div>
+    </div>
+    <div class="card">
+      <div class="card-head">
+        <div class="card-title"><span class="icon">📋</span>Feuille de présence</div>
+        <div style="display:flex;gap:7px;flex-wrap:wrap;">
+          <select id="filter-filiere" onchange="renderPresences()" style="width:auto;font-size:11.5px;"><option value="">Toutes filières</option><option>Restauration</option><option>Pâtisserie</option><option>Couture</option><option>Gestion & Comptabilité</option><option>Secrétariat Bureautique</option></select>
+          <select id="filter-niveau" onchange="renderPresences()" style="width:auto;font-size:11.5px;"><option value="">Tous niveaux</option><option>CPS 3 mois</option><option>CPS 6 mois</option><option>CPS 1 an</option><option>CAP 1</option><option>CAP 2</option><option>CAP 3</option><option>BT 1</option><option>BT 2</option><option>BT 3</option><option>BTS 1</option><option>BTS 2</option></select>
+          <button class="btn btn-ghost btn-sm" onclick="openModal('modal-add-apprenant')">+ Apprenant</button>
+        </div>
+      </div>
+      <table class="tbl">
+        <thead><tr><th>Apprenant</th><th>Filière / Niveau</th><th>Cours actuel</th><th>Statut</th><th>Justification</th><th>Absences</th><th>Détails</th></tr></thead>
+        <tbody id="presences-tbody"></tbody>
+      </table>
+    </div>
+    <div class="card"><div class="card-head"><div class="card-title"><span class="icon">⚠️</span>Absences répétées (≥ 3)</div></div><div id="absences-repetees"></div></div>
+  </div>
+
+  <!-- PROFESSEURS -->
+  <div class="page" id="page-professeurs">
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-val green" id="pr-present">0</div><div class="stat-label">Présents</div></div>
+      <div class="stat-card"><div class="stat-val red" id="pr-absent">0</div><div class="stat-label">Absents</div></div>
+      <div class="stat-card"><div class="stat-val amber" id="pr-retard">0</div><div class="stat-label">Retards</div></div>
+      <div class="stat-card"><div class="stat-val purple" id="pr-avance">0%</div><div class="stat-label">Avancement moyen</div></div>
+    </div>
+    <div class="card">
+      <div class="card-head">
+        <div class="card-title"><span class="icon">👨‍🏫</span>Suivi des professeurs</div>
+        <button class="btn btn-ghost btn-sm" onclick="openModal('modal-add-prof')">+ Professeur</button>
+      </div>
+      <table class="tbl">
+        <thead><tr><th>Professeur</th><th>Matière / Filière</th><th>Statut</th><th>Heures Théorie</th><th>Heures Pratique</th><th>Total réalisé</th><th>Avancement</th><th>Actions</th></tr></thead>
+        <tbody id="profs-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- EDT GÉNÉRAL -->
+  <div class="page" id="page-edt-general">
+    <div class="card">
+      <div class="card-head">
+        <div class="card-title"><span class="icon">📅</span>Emploi du temps général</div>
+        <div style="display:flex;gap:7px;align-items:center;">
+          <div class="week-nav"><button onclick="changeWeek(-1)">‹</button><span id="week-label"></span><button onclick="changeWeek(1)">›</button></div>
+          <button class="btn btn-ghost btn-sm" onclick="openModal('modal-add-cours')">+ Cours</button>
+        </div>
+      </div>
+      <div style="display:flex;gap:7px;margin-bottom:10px;flex-wrap:wrap;">
+        <select id="edt-filiere" onchange="renderEDTGeneral()" style="width:auto;font-size:11.5px;"><option value="">Toutes filières</option><option>Restauration</option><option>Pâtisserie</option><option>Couture</option><option>Gestion & Comptabilité</option><option>Secrétariat Bureautique</option></select>
+        <select id="edt-niveau" onchange="renderEDTGeneral()" style="width:auto;font-size:11.5px;"><option value="">Tous niveaux</option><option>CPS 3 mois</option><option>CPS 6 mois</option><option>CPS 1 an</option><option>CAP 1</option><option>CAP 2</option><option>CAP 3</option><option>BT 1</option><option>BT 2</option><option>BT 3</option><option>BTS 1</option><option>BTS 2</option></select>
+      </div>
+      <div class="edt-wrapper"><div id="edt-general-grid"></div></div>
+      <div style="margin-top:9px;" id="edt-conflits"></div>
+    </div>
+  </div>
+
+  <!-- EDT PROFS -->
+  <div class="page" id="page-edt-profs">
+    <div class="card">
+      <div class="card-head"><div class="card-title"><span class="icon">🗓️</span>EDT par professeur</div></div>
+      <div class="form-group" style="max-width:260px;"><label>Sélectionner un professeur</label><select id="edt-prof-select" onchange="renderEDTProf()"></select></div>
+      <div class="edt-wrapper"><div id="edt-prof-grid"></div></div>
+    </div>
+  </div>
+
+  <!-- EDT CLASSES -->
+  <div class="page" id="page-edt-classes">
+    <div class="card">
+      <div class="card-head"><div class="card-title"><span class="icon">🎓</span>EDT par classe</div></div>
+      <div class="form-row" style="max-width:480px;">
+        <div><label>Filière</label><select id="edt-classe-filiere" onchange="renderEDTClasse()"><option value="">Toutes</option><option>Restauration</option><option>Pâtisserie</option><option>Couture</option><option>Gestion & Comptabilité</option><option>Secrétariat Bureautique</option></select></div>
+        <div><label>Niveau</label><select id="edt-classe-niveau" onchange="renderEDTClasse()"><option value="">Tous</option><option>CPS 3 mois</option><option>CPS 6 mois</option><option>CPS 1 an</option><option>CAP 1</option><option>CAP 2</option><option>CAP 3</option><option>BT 1</option><option>BT 2</option><option>BT 3</option><option>BTS 1</option><option>BTS 2</option></select></div>
+      </div>
+      <div class="edt-wrapper"><div id="edt-classe-grid"></div></div>
+    </div>
+  </div>
+
+  <!-- CAHIER DE TEXTE -->
+  <div class="page" id="page-cahier">
+    <div class="two-col">
+      <div>
+        <div class="card">
+          <div class="card-title" style="margin-bottom:12px;"><span class="icon">📖</span>Nouveau contenu de cours</div>
+          <div class="form-row">
+            <div><label>Professeur</label><select id="ct-prof"></select></div>
+            <div><label>Date</label><input type="date" id="ct-date"></div>
+          </div>
+          <div class="form-row">
+            <div><label>Créneau horaire</label><select id="ct-creneau"></select></div>
+            <div><label>Type</label>
+              <select id="ct-type">
+                <option value="th">📘 Théorie</option>
+                <option value="pr">🔧 Pratique</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div><label>Filière</label><select id="ct-filiere"><option>Restauration</option><option>Pâtisserie</option><option>Couture</option><option>Gestion & Comptabilité</option><option>Secrétariat Bureautique</option></select></div>
+            <div><label>Niveau</label><select id="ct-niveau"><option>CPS 3 mois</option><option>CPS 6 mois</option><option>CPS 1 an</option><option>CAP 1</option><option>CAP 2</option><option>CAP 3</option><option>BT 1</option><option>BT 2</option><option>BT 3</option><option>BTS 1</option><option>BTS 2</option></select></div>
+          </div>
+          <div class="form-group"><label>Matière enseignée</label><input id="ct-matiere" placeholder="Ex: Techniques de découpe"></div>
+          <div class="form-group"><label>Contenu du cours (ce qui a été enseigné)</label><textarea id="ct-contenu" rows="4" placeholder="Ex: Introduction aux sauces mères, préparation du roux blanc, béchamel de base. Les apprenants ont réalisé 3 sauces en autonomie..."></textarea></div>
+          <div class="form-group"><label>Où s'est arrêté le programme</label><input id="ct-arret" placeholder="Ex: Chapitre 3 p.45 — Sauces dérivées à voir la prochaine fois"></div>
+          <div style="display:flex;justify-content:flex-end;"><button class="btn btn-primary" onclick="saveCahier()">💾 Enregistrer</button></div>
+        </div>
+      </div>
+      <div>
+        <div class="card" style="margin-bottom:13px;">
+          <div class="card-head">
+            <div class="card-title"><span class="icon">🔍</span>Filtrer le cahier</div>
+          </div>
+          <div class="form-row">
+            <div><label>Professeur</label><select id="ct-filter-prof" onchange="renderCahier()"><option value="">Tous</option></select></div>
+            <div><label>Filière</label><select id="ct-filter-filiere" onchange="renderCahier()"><option value="">Toutes</option><option>Restauration</option><option>Pâtisserie</option><option>Couture</option><option>Gestion & Comptabilité</option><option>Secrétariat Bureautique</option></select></div>
+          </div>
+          <div><label>Type</label>
+            <select id="ct-filter-type" onchange="renderCahier()" style="width:auto;">
+              <option value="">Tous</option><option value="th">📘 Théorie</option><option value="pr">🔧 Pratique</option>
+            </select>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head"><div class="card-title"><span class="icon">📖</span>Historique des cours</div></div>
+          <div id="cahier-list"><span class="ia-placeholder">Aucune entrée enregistrée.</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- NOTES -->
+  <div class="page" id="page-notes">
+    <div class="card">
+      <div class="card-head">
+        <div class="card-title"><span class="icon">📝</span>Notes & évaluations</div>
+        <button class="btn btn-ghost btn-sm" onclick="openModal('modal-add-note')">+ Ajouter note</button>
+      </div>
+      <div class="form-row" style="max-width:520px;">
+        <div><label>Filière</label><select id="notes-filiere" onchange="renderNotes()"><option value="">Toutes</option><option>Restauration</option><option>Pâtisserie</option><option>Couture</option><option>Gestion & Comptabilité</option><option>Secrétariat Bureautique</option></select></div>
+        <div><label>Niveau</label><select id="notes-niveau" onchange="renderNotes()"><option value="">Tous</option><option>CPS 3 mois</option><option>CPS 6 mois</option><option>CPS 1 an</option><option>CAP 1</option><option>CAP 2</option><option>CAP 3</option><option>BT 1</option><option>BT 2</option><option>BT 3</option><option>BTS 1</option><option>BTS 2</option></select></div>
+      </div>
+      <table class="tbl" id="notes-table">
+        <thead><tr><th>Apprenant</th><th>Filière/Niveau</th><th>Matière</th><th>Note /20</th><th>Type éval.</th><th>Date</th><th>Observations</th></tr></thead>
+        <tbody id="notes-tbody"></tbody>
+      </table>
+    </div>
+    <div class="card">
+      <div class="card-head"><div class="card-title"><span class="icon">👤</span>Fiche individuelle apprenant</div></div>
+      <div class="form-group" style="max-width:280px;"><label>Sélectionner un apprenant</label><select id="notes-appr-select" onchange="renderFicheApprenant()"></select></div>
+      <div id="fiche-apprenant"></div>
+    </div>
+  </div>
+
+  <!-- ASSISTANT IA -->
+  <div class="page" id="page-ia">
+    <div class="two-col">
+      <div>
+        <div class="card">
+          <div class="card-title" style="margin-bottom:11px;"><span class="icon">✨</span>Assistant IA — CFPADC</div>
+          <div class="quick-btns" id="quick-btns-ia"></div>
+          <div class="form-group"><label>Ta demande</label><textarea id="ia-prompt" rows="4" placeholder="Décris ce dont tu as besoin..."></textarea></div>
+          <div style="display:flex;justify-content:flex-end;gap:7px;">
+            <button class="btn btn-ghost" onclick="document.getElementById('ia-result').innerHTML='<span class=ia-placeholder>—</span>';document.getElementById('ia-prompt').value=''">Effacer</button>
+            <button class="btn btn-primary" id="ia-btn" onclick="runIA()">✨ Générer</button>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="card" style="height:100%;">
+          <div class="card-head"><div class="card-title"><span class="icon">📄</span>Document généré</div><button class="btn btn-ghost btn-sm" onclick="copyResult()">⎘ Copier</button></div>
+          <div class="ia-result" id="ia-result"><span class="ia-placeholder">Le document apparaîtra ici...</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RAPPORTS -->
+  <div class="page" id="page-rapports">
+    <div class="three-col">
+      <div class="card" style="cursor:pointer;" onclick="genRapport('presences-jour')"><div style="font-size:26px;margin-bottom:7px;">📋</div><div style="font-weight:600;font-size:13px;margin-bottom:3px;">Rapport présences</div><div style="font-size:11px;color:var(--gray-400);">Feuille journalière</div></div>
+      <div class="card" style="cursor:pointer;" onclick="genRapport('heures-profs')"><div style="font-size:26px;margin-bottom:7px;">⏱️</div><div style="font-weight:600;font-size:13px;margin-bottom:3px;">Bilan heures profs</div><div style="font-size:11px;color:var(--gray-400);">Théorie + Pratique + Total</div></div>
+      <div class="card" style="cursor:pointer;" onclick="genRapport('avancement-cours')"><div style="font-size:26px;margin-bottom:7px;">📊</div><div style="font-weight:600;font-size:13px;margin-bottom:3px;">Avancement programmes</div><div style="font-size:11px;color:var(--gray-400);">Cahier de texte synthèse</div></div>
+      <div class="card" style="cursor:pointer;" onclick="genRapport('convocation')"><div style="font-size:26px;margin-bottom:7px;">📩</div><div style="font-weight:600;font-size:13px;margin-bottom:3px;">Convocation apprenant</div><div style="font-size:11px;color:var(--gray-400);">Absence ou incident</div></div>
+      <div class="card" style="cursor:pointer;" onclick="genRapport('bilan-notes')"><div style="font-size:26px;margin-bottom:7px;">📝</div><div style="font-weight:600;font-size:13px;margin-bottom:3px;">Bilan des notes</div><div style="font-size:11px;color:var(--gray-400);">Moyennes par matière</div></div>
+      <div class="card" style="cursor:pointer;" onclick="genRapport('signalement-prof')"><div style="font-size:26px;margin-bottom:7px;">⚠️</div><div style="font-weight:600;font-size:13px;margin-bottom:3px;">Signalement professeur</div><div style="font-size:11px;color:var(--gray-400);">Absence ou retard</div></div>
+    </div>
+    <div class="card"><div class="card-head"><div class="card-title"><span class="icon">📄</span>Aperçu</div><button class="btn btn-ghost btn-sm" onclick="window.print()">🖨️ Imprimer</button></div><div class="ia-result" id="rapport-result"><span class="ia-placeholder">Clique sur un rapport pour le générer.</span></div></div>
+  </div>
+
+  <!-- CONFIG -->
+  <div class="page" id="page-config">
+    <!-- VERROU MOT DE PASSE -->
+    <div id="cfg-lock" style="display:none;position:absolute;inset:0;background:rgba(61,36,73,.97);z-index:50;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px;">
+      <div style="font-size:36px;">🔒</div>
+      <div style="color:#fff;font-size:15px;font-weight:600;">Paramètres protégés</div>
+      <div style="color:rgba(255,255,255,.6);font-size:12px;">Entrez le mot de passe administrateur</div>
+      <input type="password" id="cfg-pwd-input" placeholder="Mot de passe..." style="width:220px;text-align:center;border-radius:8px;border:none;padding:10px;font-size:14px;" onkeydown="if(event.key==='Enter')checkPwd()">
+      <button onclick="checkPwd()" style="background:var(--violet-light);color:#fff;border:none;border-radius:6px;padding:9px 24px;font-size:13px;font-weight:500;cursor:pointer;">Accéder</button>
+      <div id="cfg-pwd-err" style="color:#F5A8A8;font-size:12px;display:none;">Mot de passe incorrect</div>
+    </div>
+
+    <div id="cfg-content">
+      <!-- SOUS-ONGLETS -->
+      <div class="subtabs">
+        <div class="subtab active" onclick="showCfgTab('etablissement',this)">🏫 Établissement</div>
+        <div class="subtab" onclick="showCfgTab('filieres',this)">📚 Filières & Niveaux</div>
+        <div class="subtab" onclick="showCfgTab('salles',this)">🚪 Salles</div>
+        <div class="subtab" onclick="showCfgTab('utilisateurs',this)">👥 Utilisateurs</div>
+        <div class="subtab" onclick="showCfgTab('periodes',this)">📅 Périodes</div>
+        <div class="subtab" onclick="showCfgTab('systeme',this)">⚙️ Système</div>
+      </div>
+
+      <!-- ETABLISSEMENT -->
+      <div class="cfg-tab active" id="cfgtab-etablissement">
+        <div class="two-col">
+          <div class="card">
+            <div class="card-title" style="margin-bottom:13px;"><span class="icon">🏫</span>Informations de l'établissement</div>
+            <div class="form-group"><label>Nom de l'établissement</label><input id="cfg-nom-etab" placeholder="CFPADC"></div>
+            <div class="form-group"><label>Nom complet</label><input id="cfg-nom-complet" placeholder="Centre de Formation Professionnelle Atelier des Chefs"></div>
+            <div class="form-group"><label>Ville / Localité</label><input id="cfg-ville" placeholder="Saint-Louis, Sénégal"></div>
+            <div class="form-row">
+              <div><label>Téléphone</label><input id="cfg-tel" placeholder="+221 XX XXX XX XX"></div>
+              <div><label>Email</label><input id="cfg-email" placeholder="contact@cfpadc.sn"></div>
+            </div>
+            <div class="form-group"><label>Adresse</label><input id="cfg-adresse" placeholder="Adresse complète..."></div>
+            <button class="btn btn-primary" onclick="saveEtablissement()">💾 Sauvegarder</button>
+          </div>
+          <div class="card">
+            <div class="card-title" style="margin-bottom:13px;"><span class="icon">👤</span>Direction & Année scolaire</div>
+            <div class="form-group"><label>Nom du Directeur</label><input id="cfg-directeur" placeholder="M. / Mme ..."></div>
+            <div class="form-group"><label>Nom du Surveillant Général</label><input id="cfg-sg" placeholder="Amadou Ousmane Sall"></div>
+            <div class="form-row">
+              <div><label>Année scolaire</label><input id="cfg-annee" placeholder="2024-2025"></div>
+              <div><label>Semestre actif</label>
+                <select id="cfg-semestre">
+                  <option value="1">Semestre 1</option>
+                  <option value="2">Semestre 2</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-row">
+              <div><label>Début année scolaire</label><input type="date" id="cfg-debut"></div>
+              <div><label>Fin année scolaire</label><input type="date" id="cfg-fin"></div>
+            </div>
+            <button class="btn btn-primary" onclick="saveEtablissement()">💾 Sauvegarder</button>
+          </div>
+        </div>
+        <!-- Aperçu entête document -->
+        <div class="card">
+          <div class="card-title" style="margin-bottom:10px;"><span class="icon">📄</span>Aperçu entête documents officiels</div>
+          <div id="cfg-header-preview" style="border:1px solid var(--gray-200);border-radius:6px;padding:16px;background:var(--gray-50);font-size:12px;line-height:1.8;"></div>
+        </div>
+      </div>
+
+      <!-- FILIÈRES & NIVEAUX -->
+      <div class="cfg-tab" id="cfgtab-filieres" style="display:none;">
+        <div class="two-col">
+          <div class="card">
+            <div class="card-head">
+              <div class="card-title"><span class="icon">📚</span>Filières actives</div>
+              <button class="btn btn-ghost btn-sm" onclick="addFiliere()">+ Filière</button>
+            </div>
+            <div id="filieres-list"></div>
+          </div>
+          <div class="card">
+            <div class="card-head">
+              <div class="card-title"><span class="icon">🎓</span>Niveaux actifs</div>
+              <button class="btn btn-ghost btn-sm" onclick="addNiveau()">+ Niveau</button>
+            </div>
+            <div id="niveaux-list"></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title" style="margin-bottom:10px;"><span class="icon">⏰</span>Créneaux horaires</div>
+          <div id="horaires-list"></div>
+          <button class="btn btn-ghost btn-sm" onclick="addHoraire()" style="margin-top:7px;">+ Créneau</button>
+        </div>
+      </div>
+
+      <!-- SALLES -->
+      <div class="cfg-tab" id="cfgtab-salles" style="display:none;">
+        <div class="card">
+          <div class="card-head">
+            <div class="card-title"><span class="icon">🚪</span>Salles & espaces pédagogiques</div>
+            <button class="btn btn-ghost btn-sm" onclick="addSalle()">+ Salle</button>
+          </div>
+          <table class="tbl">
+            <thead><tr><th>Nom</th><th>Type</th><th>Capacité</th><th>Filière associée</th><th>Actions</th></tr></thead>
+            <tbody id="salles-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- UTILISATEURS -->
+      <div class="cfg-tab" id="cfgtab-utilisateurs" style="display:none;">
+        <div class="card">
+          <div class="card-head">
+            <div class="card-title"><span class="icon">👥</span>Comptes utilisateurs</div>
+            <button class="btn btn-ghost btn-sm" onclick="openModal('modal-add-user')">+ Utilisateur</button>
+          </div>
+          <table class="tbl">
+            <thead><tr><th>Nom</th><th>Rôle</th><th>Identifiant</th><th>Accès</th><th>Actions</th></tr></thead>
+            <tbody id="users-tbody"></tbody>
+          </table>
+        </div>
+        <div class="card">
+          <div class="card-title" style="margin-bottom:13px;"><span class="icon">🔒</span>Sécurité</div>
+          <div class="form-row">
+            <div><label>Mot de passe paramètres (actuel)</label><input type="password" id="cfg-pwd-old" placeholder="••••••"></div>
+            <div><label>Nouveau mot de passe</label><input type="password" id="cfg-pwd-new" placeholder="••••••"></div>
+          </div>
+          <button class="btn btn-primary" onclick="changePwd()">🔒 Changer le mot de passe</button>
+        </div>
+      </div>
+
+      <!-- PÉRIODES -->
+      <div class="cfg-tab" id="cfgtab-periodes" style="display:none;">
+        <div class="two-col">
+          <div class="card">
+            <div class="card-head">
+              <div class="card-title"><span class="icon">📅</span>Périodes d'évaluation</div>
+              <button class="btn btn-ghost btn-sm" onclick="addPeriode()">+ Période</button>
+            </div>
+            <div id="periodes-list"></div>
+          </div>
+          <div class="card">
+            <div class="card-title" style="margin-bottom:13px;"><span class="icon">🗓️</span>Calendrier scolaire</div>
+            <div id="calendrier-list"></div>
+            <button class="btn btn-ghost btn-sm" onclick="addCalendrier()" style="margin-top:7px;">+ Événement</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- SYSTÈME -->
+      <div class="cfg-tab" id="cfgtab-systeme" style="display:none;">
+        <div class="two-col">
+          <div class="card">
+            <div class="card-title" style="margin-bottom:13px;"><span class="icon">☁️</span>Google Sheets</div>
+            <div class="form-group"><label>URL du Google Apps Script (Web App)</label><input type="text" id="cfg-script-url" placeholder="https://script.google.com/macros/s/..."></div>
+            <button class="btn btn-primary" onclick="saveConfig()">💾 Sauvegarder</button>
+          </div>
+          <div class="card">
+            <div class="card-title" style="margin-bottom:13px;"><span class="icon">💾</span>Sauvegarde & restauration</div>
+            <div style="display:flex;flex-direction:column;gap:8px;">
+              <button class="btn btn-ghost" onclick="exportConfig()">⬇️ Exporter toutes les données (JSON)</button>
+              <label class="btn btn-ghost" style="cursor:pointer;">📂 Importer une sauvegarde <input type="file" accept=".json" onchange="importConfig(this)" style="display:none;"></label>
+              <button class="btn btn-danger" onclick="resetData()" style="background:var(--danger-bg);color:var(--danger);border:none;">⚠️ Réinitialiser toutes les données</button>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title" style="margin-bottom:10px;"><span class="icon">ℹ️</span>Informations système</div>
+          <div style="font-size:12px;color:var(--gray-600);line-height:2;" id="sys-info"></div>
+        </div>
+      </div>
+
+    </div><!-- /cfg-content -->
+  </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+</div><!-- /shell -->
+
+<!-- MODALES -->
+<div class="modal-overlay" id="modal-add-apprenant">
+  <div class="modal">
+    <div class="modal-head"><div class="modal-title">Ajouter un apprenant</div><button class="modal-close" onclick="closeModal('modal-add-apprenant')">×</button></div>
+    <div class="form-row"><div><label>Prénom</label><input id="ap-prenom" placeholder="Fatou"></div><div><label>Nom</label><input id="ap-nom" placeholder="Sarr"></div></div>
+    <div class="form-row">
+      <div><label>Filière</label><select id="ap-filiere"><option>Restauration</option><option>Pâtisserie</option><option>Couture</option><option>Gestion & Comptabilité</option><option>Secrétariat Bureautique</option></select></div>
+      <div><label>Niveau</label><select id="ap-niveau"><option>CPS 3 mois</option><option>CPS 6 mois</option><option>CPS 1 an</option><option>CAP 1</option><option>CAP 2</option><option>CAP 3</option><option>BT 1</option><option>BT 2</option><option>BT 3</option><option>BTS 1</option><option>BTS 2</option></select></div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('modal-add-apprenant')">Annuler</button><button class="btn btn-primary" onclick="addApprenant()">Ajouter</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-add-prof">
+  <div class="modal">
+    <div class="modal-head"><div class="modal-title">Ajouter un professeur</div><button class="modal-close" onclick="closeModal('modal-add-prof')">×</button></div>
+    <div class="form-row"><div><label>Prénom/Titre</label><input id="pr-prenom" placeholder="M."></div><div><label>Nom</label><input id="pr-nom" placeholder="Diop"></div></div>
+    <div class="form-row"><div><label>Matière</label><input id="pr-matiere" placeholder="Techniques culinaires"></div><div><label>Filière</label><select id="pr-filiere"><option>Restauration</option><option>Pâtisserie</option><option>Couture</option><option>Gestion & Comptabilité</option><option>Secrétariat Bureautique</option></select></div></div>
+    <div class="form-row3">
+      <div><label>Heures Théorie prévues</label><input id="pr-hth" type="number" value="60"></div>
+      <div><label>Heures Pratique prévues</label><input id="pr-hpr" type="number" value="60"></div>
+      <div><label>Durée créneau (h)</label><input id="pr-duree" type="number" value="2"></div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('modal-add-prof')">Annuler</button><button class="btn btn-primary" onclick="addProf()">Ajouter</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-add-cours">
+  <div class="modal">
+    <div class="modal-head"><div class="modal-title">Ajouter un cours à l'EDT</div><button class="modal-close" onclick="closeModal('modal-add-cours')">×</button></div>
+    <div class="form-row"><div><label>Jour</label><select id="c-jour"><option>Lundi</option><option>Mardi</option><option>Mercredi</option><option>Jeudi</option><option>Vendredi</option><option>Samedi</option></select></div><div><label>Créneau</label><select id="c-creneau"></select></div></div>
+    <div class="form-row"><div><label>Professeur</label><select id="c-prof"></select></div><div><label>Matière</label><input id="c-matiere" placeholder="Pâtisserie avancée"></div></div>
+    <div class="form-row"><div><label>Type</label><select id="c-type"><option value="th">📘 Théorie</option><option value="pr">🔧 Pratique</option></select></div><div><label>Salle</label><input id="c-salle" placeholder="Salle A"></div></div>
+    <div class="form-row"><div><label>Filière</label><select id="c-filiere"><option>Restauration</option><option>Pâtisserie</option><option>Couture</option><option>Gestion & Comptabilité</option><option>Secrétariat Bureautique</option></select></div><div><label>Niveau</label><select id="c-niveau"><option>CPS 3 mois</option><option>CPS 6 mois</option><option>CPS 1 an</option><option>CAP 1</option><option>CAP 2</option><option>CAP 3</option><option>BT 1</option><option>BT 2</option><option>BT 3</option><option>BTS 1</option><option>BTS 2</option></select></div></div>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('modal-add-cours')">Annuler</button><button class="btn btn-primary" onclick="addCours()">Ajouter</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-add-note">
+  <div class="modal">
+    <div class="modal-head"><div class="modal-title">Ajouter une note</div><button class="modal-close" onclick="closeModal('modal-add-note')">×</button></div>
+    <div class="form-row"><div><label>Apprenant</label><select id="n-apprenant"></select></div><div><label>Matière</label><input id="n-matiere" placeholder="Pâtisserie"></div></div>
+    <div class="form-row3"><div><label>Note /20</label><input id="n-note" type="number" min="0" max="20" step="0.5" placeholder="15"></div><div><label>Type éval.</label><select id="n-type"><option>Devoir</option><option>Contrôle</option><option>TP Pratique</option><option>Examen</option></select></div><div><label>Date</label><input id="n-date" type="date"></div></div>
+    <div class="form-group"><label>Observations</label><input id="n-obs" placeholder="Très bon travail pratique..."></div>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('modal-add-note')">Annuler</button><button class="btn btn-primary" onclick="addNote()">Enregistrer</button></div>
+  </div>
+</div>
+
+<style>
+.cfg-tab{display:none}.cfg-tab.active{display:block}
+.tag-item{display:flex;align-items:center;justify-content:space-between;padding:7px 10px;background:var(--gray-50);border:1px solid var(--gray-200);border-radius:6px;margin-bottom:5px;font-size:12.5px;}
+.tag-item .tag-label{color:var(--gray-800);flex:1;}
+.tag-del{background:none;border:none;cursor:pointer;color:var(--danger);font-size:15px;padding:0 4px;}
+.tag-edit{background:none;border:none;cursor:pointer;color:var(--violet);font-size:13px;padding:0 4px;}
+.role-badge{font-size:10.5px;padding:2px 8px;border-radius:99px;font-weight:500;}
+.role-sg{background:#EDE4F3;color:#3D2449;}
+.role-dir{background:#E4F2FB;color:#1A5F8A;}
+.role-prof{background:#EAF4EE;color:#2D7A4F;}
+#page-config{position:relative;}
+</style>
+
+<div class="modal-overlay" id="modal-add-user">
+  <div class="modal">
+    <div class="modal-head"><div class="modal-title">Ajouter un utilisateur</div><button class="modal-close" onclick="closeModal('modal-add-user')">×</button></div>
+    <div class="form-row"><div><label>Prénom</label><input id="u-prenom" placeholder="Amadou"></div><div><label>Nom</label><input id="u-nom" placeholder="Sall"></div></div>
+    <div class="form-group"><label>Identifiant (login)</label><input id="u-login" placeholder="a.sall"></div>
+    <div class="form-row">
+      <div><label>Rôle</label>
+        <select id="u-role">
+          <option value="sg">Surveillant Général</option>
+          <option value="dir">Directeur</option>
+          <option value="prof">Professeur</option>
+          <option value="admin">Administratif</option>
+        </select>
+      </div>
+      <div><label>Mot de passe</label><input type="password" id="u-pwd" placeholder="••••••"></div>
+    </div>
+    <div class="form-group"><label>Accès modules</label>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;" id="u-acces-list">
+        <label style="display:flex;align-items:center;gap:4px;font-size:12px;font-weight:400;"><input type="checkbox" value="presences" checked> Présences</label>
+        <label style="display:flex;align-items:center;gap:4px;font-size:12px;font-weight:400;"><input type="checkbox" value="professeurs" checked> Professeurs</label>
+        <label style="display:flex;align-items:center;gap:4px;font-size:12px;font-weight:400;"><input type="checkbox" value="edt" checked> EDT</label>
+        <label style="display:flex;align-items:center;gap:4px;font-size:12px;font-weight:400;"><input type="checkbox" value="cahier" checked> Cahier</label>
+        <label style="display:flex;align-items:center;gap:4px;font-size:12px;font-weight:400;"><input type="checkbox" value="notes" checked> Notes</label>
+        <label style="display:flex;align-items:center;gap:4px;font-size:12px;font-weight:400;"><input type="checkbox" value="rapports" checked> Rapports</label>
+        <label style="display:flex;align-items:center;gap:4px;font-size:12px;font-weight:400;"><input type="checkbox" value="config"> Paramètres</label>
+      </div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('modal-add-user')">Annuler</button><button class="btn btn-primary" onclick="addUser()">Ajouter</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-add-salle">
+  <div class="modal">
+    <div class="modal-head"><div class="modal-title">Ajouter une salle</div><button class="modal-close" onclick="closeModal('modal-add-salle')">×</button></div>
+    <div class="form-row"><div><label>Nom de la salle</label><input id="s-nom" placeholder="Salle A"></div><div><label>Capacité</label><input id="s-cap" type="number" placeholder="25"></div></div>
+    <div class="form-row">
+      <div><label>Type</label><select id="s-type"><option>Salle de cours</option><option>Cuisine / Atelier</option><option>Salle informatique</option><option>Amphithéâtre</option><option>Atelier Couture</option></select></div>
+      <div><label>Filière associée</label><select id="s-filiere"><option value="">Toutes</option><option>Restauration</option><option>Pâtisserie</option><option>Couture</option><option>Gestion & Comptabilité</option><option>Secrétariat Bureautique</option></select></div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('modal-add-salle')">Annuler</button><button class="btn btn-primary" onclick="addSalle()">Ajouter</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-justif">
+  <div class="modal">
+    <div class="modal-head"><div class="modal-title">Justification d'absence / retard</div><button class="modal-close" onclick="closeModal('modal-justif')">×</button></div>
+    <input type="hidden" id="justif-idx">
+    <div class="form-group"><label>Motif</label><select id="justif-motif"><option value="">— Sélectionner —</option><option>Maladie</option><option>Raison familiale</option><option>Problème de transport</option><option>Autorisation préalable</option><option>Autre</option></select></div>
+    <div class="form-group"><label>Précision</label><textarea id="justif-detail" placeholder="Détail..."></textarea></div>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('modal-justif')">Annuler</button><button class="btn btn-primary" onclick="saveJustif()">Valider</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-fiche-abs">
+  <div class="modal" style="width:540px;">
+    <div class="modal-head"><div class="modal-title" id="fiche-abs-title">Détail absences / retards</div><button class="modal-close" onclick="closeModal('modal-fiche-abs')">×</button></div>
+    <div id="fiche-abs-content"></div>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('modal-fiche-abs')">Fermer</button></div>
+  </div>
+</div>
+
+<script>
+// ========== DATA ==========
+let DATA = {
+  config:{scriptUrl:''},
+  horaires:['7h30-9h30','9h30-11h30','11h30-13h00','14h00-16h00','16h00-17h30'],
+  apprenants:[
+    {prenom:'Fatou',nom:'Sarr',filiere:'Restauration',niveau:'CAP 2',statut:'present',absences:[],retards:[]},
+    {prenom:'Moussa',nom:'Diallo',filiere:'Restauration',niveau:'CAP 1',statut:'absent',absences:[{date:'2025-06-20',cours:'Techniques culinaires',creneau:'7h30-9h30',justif:''},{date:'2025-06-19',cours:'Hygiène alimentaire',creneau:'14h00-16h00',justif:''},{date:'2025-06-18',cours:'Techniques culinaires',creneau:'7h30-9h30',justif:'Maladie'},{date:'2025-06-17',cours:'Technologie',creneau:'9h30-11h30',justif:''}],retards:[]},
+    {prenom:'Aminata',nom:'Ndiaye',filiere:'Pâtisserie',niveau:'BT 1',statut:'retard',absences:[],retards:[{date:'2025-06-20',cours:'Pâtisserie',creneau:'7h30-9h30',justif:''},{date:'2025-06-18',cours:'Pâtisserie avancée',creneau:'9h30-11h30',justif:'Transport'},{date:'2025-06-17',cours:'Pâtisserie',creneau:'7h30-9h30',justif:''}]},
+    {prenom:'Ibrahima',nom:'Sow',filiere:'Couture',niveau:'CAP 3',statut:'present',absences:[],retards:[]},
+    {prenom:'Rokhaya',nom:'Thiaw',filiere:'Gestion & Comptabilité',niveau:'BTS 1',statut:'present',absences:[{date:'2025-06-16',cours:'Comptabilité',creneau:'14h00-16h00',justif:'Raison familiale'}],retards:[]},
+    {prenom:'Oumar',nom:'Fall',filiere:'Secrétariat Bureautique',niveau:'BT 2',statut:'absent',absences:[{date:'2025-06-20',cours:'Word',creneau:'9h30-11h30',justif:'Maladie'},{date:'2025-06-19',cours:'Bureautique',creneau:'7h30-9h30',justif:'Maladie'},{date:'2025-06-18',cours:'Communication',creneau:'14h00-16h00',justif:''}],retards:[]},
+    {prenom:'Ndèye',nom:'Faye',filiere:'Pâtisserie',niveau:'CPS 6 mois',statut:'present',absences:[],retards:[]},
+    {prenom:'Aliou',nom:'Sy',filiere:'Restauration',niveau:'CAP 2',statut:'retard',absences:[],retards:[{date:'2025-06-20',cours:'Techniques culinaires',creneau:'7h30-9h30',justif:''}]},
+  ],
+  professeurs:[
+    {prenom:'M.',nom:'Diop',matiere:'Techniques culinaires',filiere:'Restauration',statut:'present',hThPrevu:60,hPrPrevu:60,hThFait:54,hPrFait:42},
+    {prenom:'Mme',nom:'Sarr',matiere:'Pâtisserie',filiere:'Pâtisserie',statut:'present',hThPrevu:50,hPrPrevu:50,hThFait:35,hPrFait:40},
+    {prenom:'M.',nom:'Niang',matiere:'Coupe & Couture',filiere:'Couture',statut:'retard',hThPrevu:40,hPrPrevu:70,hThFait:28,hPrFait:38},
+    {prenom:'Mme',nom:'Fall',matiere:'Comptabilité générale',filiere:'Gestion & Comptabilité',statut:'present',hThPrevu:80,hPrPrevu:50,hThFait:72,hPrFait:45},
+    {prenom:'M.',nom:'Thiaw',matiere:'Bureautique',filiere:'Secrétariat Bureautique',statut:'absent',hThPrevu:40,hPrPrevu:50,hThFait:18,hPrFait:18},
+    {prenom:'Mme',nom:'Ba',matiere:'Communication',filiere:'Secrétariat Bureautique',statut:'present',hThPrevu:50,hPrPrevu:30,hThFait:40,hPrFait:24},
+  ],
+  cours:[
+    {jour:'Lundi',creneau:'7h30-9h30',prof:'M. Diop',matiere:'Techniques culinaires',filiere:'Restauration',niveau:'CAP 2',salle:'Cuisine A',type:'pr'},
+    {jour:'Lundi',creneau:'9h30-11h30',prof:'Mme Sarr',matiere:'Pâtisserie',filiere:'Pâtisserie',niveau:'BT 1',salle:'Cuisine B',type:'pr'},
+    {jour:'Lundi',creneau:'14h00-16h00',prof:'Mme Fall',matiere:'Comptabilité',filiere:'Gestion & Comptabilité',niveau:'BTS 1',salle:'Salle 3',type:'th'},
+    {jour:'Mardi',creneau:'7h30-9h30',prof:'M. Niang',matiere:'Coupe',filiere:'Couture',niveau:'CAP 1',salle:'Atelier',type:'pr'},
+    {jour:'Mardi',creneau:'9h30-11h30',prof:'M. Thiaw',matiere:'Word',filiere:'Secrétariat Bureautique',niveau:'CPS 6 mois',salle:'Informatique',type:'pr'},
+    {jour:'Mercredi',creneau:'7h30-9h30',prof:'Mme Ba',matiere:'Communication',filiere:'Secrétariat Bureautique',niveau:'BT 2',salle:'Salle 1',type:'th'},
+    {jour:'Jeudi',creneau:'7h30-9h30',prof:'Mme Sarr',matiere:'Pâtisserie avancée',filiere:'Pâtisserie',niveau:'BT 1',salle:'Cuisine B',type:'pr'},
+    {jour:'Vendredi',creneau:'7h30-9h30',prof:'M. Niang',matiere:'Couture avancée',filiere:'Couture',niveau:'CAP 3',salle:'Atelier',type:'pr'},
+    {jour:'Samedi',creneau:'7h30-9h30',prof:'Mme Ba',matiere:'Rédaction admin.',filiere:'Secrétariat Bureautique',niveau:'BT 2',salle:'Salle 1',type:'th'},
+  ],
+  cahier:[
+    {prof:'M. Diop',date:'2025-06-19',creneau:'7h30-9h30',type:'pr',filiere:'Restauration',niveau:'CAP 2',matiere:'Techniques culinaires',contenu:'Réalisation des sauces mères : béchamel et velouté. Les apprenants ont travaillé en binôme sur la technique du roux. Résultats satisfaisants pour 8/10.',arret:'Chapitre 4 — Sauces dérivées à traiter prochainement'},
+    {prof:'Mme Sarr',date:'2025-06-18',creneau:'7h30-9h30',type:'pr',filiere:'Pâtisserie',niveau:'BT 1',matiere:'Pâtisserie',contenu:'Réalisation de la pâte feuilletée classique (6 tours). Introduction aux viennoiseries. Correction des erreurs de feuilletage.',arret:'p.78 — Croissants et pains au chocolat'},
+    {prof:'Mme Fall',date:'2025-06-17',creneau:'14h00-16h00',type:'th',filiere:'Gestion & Comptabilité',niveau:'BTS 1',matiere:'Comptabilité générale',contenu:'Plan comptable général — comptes de bilan (classe 1 à 5). Exercices d\'application sur les journaux de saisie.',arret:'Cours 7 — Comptes de résultat (classe 6 et 7)'},
+  ],
+  notes:[
+    {apprenant:'Fatou Sarr',filiere:'Restauration',niveau:'CAP 2',matiere:'Techniques culinaires',note:16,type:'TP Pratique',date:'2025-06-15',obs:'Excellent travail de précision'},
+    {apprenant:'Fatou Sarr',filiere:'Restauration',niveau:'CAP 2',matiere:'Hygiène',note:14,type:'Contrôle',date:'2025-06-10',obs:''},
+    {apprenant:'Moussa Diallo',filiere:'Restauration',niveau:'CAP 1',matiere:'Techniques culinaires',note:11,type:'Devoir',date:'2025-06-12',obs:'À encourager'},
+    {apprenant:'Aminata Ndiaye',filiere:'Pâtisserie',niveau:'BT 1',matiere:'Pâtisserie',note:17,type:'TP Pratique',date:'2025-06-14',obs:'Très bon niveau'},
+    {apprenant:'Aminata Ndiaye',filiere:'Pâtisserie',niveau:'BT 1',matiere:'Pâtisserie',note:15,type:'Contrôle',date:'2025-06-08',obs:''},
+  ],
+  historique:[],
+  weekOffset:0,
+};
+
+const JOURS=['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
+const COULEURS={'Restauration':'c1','Pâtisserie':'c2','Couture':'c3','Gestion & Comptabilité':'c4','Secrétariat Bureautique':'c5'};
+
+function save(){try{localStorage.setItem('cfpadc_sgv2',JSON.stringify(DATA));}catch(e){}}
+function load(){try{const d=localStorage.getItem('cfpadc_sgv2');if(d){const p=JSON.parse(d);Object.assign(DATA,p);}}catch(e){}}
+
+function showPage(id,el){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  if(el)el.classList.add('active');
+  const titles={accueil:'Tableau de bord',presences:'Présences apprenants',professeurs:'Suivi professeurs','edt-general':'Emploi du temps général','edt-profs':'EDT par professeur','edt-classes':'EDT par classe',cahier:'Cahier de texte',notes:'Notes & évaluations',ia:'Assistant IA',rapports:'Rapports & exports',config:'Paramètres'};
+  document.getElementById('page-title').textContent=titles[id]||id;
+  if(id==='presences')renderPresences();
+  if(id==='professeurs')renderProfs();
+  if(id==='edt-general')renderEDTGeneral();
+  if(id==='edt-profs'){populateSelects();renderEDTProf();}
+  if(id==='edt-classes')renderEDTClasse();
+  if(id==='cahier')renderCahier();
+  if(id==='notes'){renderNotes();populateNoteAppr();}
+  if(id==='config')renderConfig();
+}
+
+function openModal(id){
+  if(id==='modal-add-cours')populateSelects();
+  if(id==='modal-add-note')populateNoteAppr();
+  document.getElementById(id).classList.add('open');
+}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+
+// ========== PRÉSENCES ==========
+function renderPresences(){
+  const ff=document.getElementById('filter-filiere').value;
+  const fn=document.getElementById('filter-niveau').value;
+  const data=DATA.apprenants.filter(a=>(!ff||a.filiere===ff)&&(!fn||a.niveau===fn));
+  const today=todayStr();
+  // Trouver le cours actuel selon l'heure
+  const now=new Date();
+  const h=now.getHours()*60+now.getMinutes();
+  let coursDuJour='—';
+  DATA.cours.forEach(c=>{
+    const [dh,dm]=c.creneau.split('-')[0].replace('h',':').split(':').map(Number);
+    const [fh,fm]=c.creneau.split('-')[1].replace('h',':').split(':').map(Number);
+    if(h>=dh*60+(dm||0)&&h<=fh*60+(fm||0))coursDuJour=c.matiere+' ('+c.creneau+')';
+  });
+  const tbody=document.getElementById('presences-tbody');
+  tbody.innerHTML=data.map(a=>{
+    const ri=DATA.apprenants.indexOf(a);
+    const sc=a.statut==='present'?'present':a.statut==='absent'?'absent':'retard';
+    const nbAbs=a.absences.length, nbRet=a.retards.length;
+    return `<tr>
+      <td><div style="display:flex;align-items:center;gap:7px;"><div class="avatar" style="width:26px;height:26px;font-size:9.5px;">${a.prenom[0]}${a.nom[0]}</div><span>${a.prenom} ${a.nom}</span></div></td>
+      <td><span class="badge badge-purple">${a.filiere}<br>${a.niveau}</span></td>
+      <td style="font-size:11px;color:var(--gray-600);">${coursDuJour}</td>
+      <td><select class="sel-status ${sc}" onchange="changeStatutAppr(${ri},this)">${['present','absent','retard'].map(s=>`<option value="${s}"${a.statut===s?' selected':''}>${s==='present'?'✓ Présent':s==='absent'?'✗ Absent':'⏱ Retard'}</option>`).join('')}</select></td>
+      <td>${(a.statut==='absent'||a.statut==='retard')&&!getJustifToday(a)?`<button class="btn btn-ghost btn-sm" onclick="openJustif(${ri})">+ Motif</button>`:(getJustifToday(a)?`<span class="badge badge-justifie">${getJustifToday(a)}</span>`:'—')}</td>
+      <td><span style="font-size:11px;${nbAbs>=3?'color:var(--danger);font-weight:600;':''}">${nbAbs} abs · ${nbRet} ret.</span></td>
+      <td><button class="btn btn-ghost btn-sm" onclick="openFicheAbs(${ri})">📂 Voir</button></td>
+    </tr>`;
+  }).join('');
+  updatePresStats();
+  renderAbsRepetees();
+  updateDashboard();
+  updateNavBadge();
+}
+
+function getJustifToday(a){
+  const today=todayStr();
+  const ab=a.absences.find(x=>x.date===today);
+  const re=a.retards.find(x=>x.date===today);
+  return (ab&&ab.justif)?ab.justif:(re&&re.justif)?re.justif:'';
+}
+
+function changeStatutAppr(i,sel){
+  const a=DATA.apprenants[i];
+  const old=a.statut;
+  a.statut=sel.value;
+  sel.className='sel-status '+sel.value;
+  const today=todayStr();
+  const now=new Date();
+  const h=now.getHours()*60+now.getMinutes();
+  let cours='—';
+  DATA.cours.forEach(c=>{
+    const [dh,dm]=c.creneau.split('-')[0].replace('h',':').split(':').map(Number);
+    const [fh,fm]=c.creneau.split('-')[1].replace('h',':').split(':').map(Number);
+    if(h>=dh*60+(dm||0)&&h<=fh*60+(fm||0))cours=c.matiere+' ('+c.creneau+')';
+  });
+  if(sel.value==='absent'&&!a.absences.find(x=>x.date===today)){
+    a.absences.push({date:today,cours:cours,creneau:DATA.horaires[0],justif:''});
+  }
+  if(sel.value==='retard'&&!a.retards.find(x=>x.date===today)){
+    a.retards.push({date:today,cours:cours,creneau:DATA.horaires[0],justif:''});
+  }
+  addHistorique('Présence',`${a.prenom} ${a.nom} → ${sel.value}`);
+  renderPresences();save();
+}
+
+function openJustif(idx){
+  document.getElementById('justif-idx').value=idx;
+  openModal('modal-justif');
+}
+function saveJustif(){
+  const idx=parseInt(document.getElementById('justif-idx').value);
+  const motif=document.getElementById('justif-motif').value;
+  if(!motif)return;
+  const detail=document.getElementById('justif-detail').value;
+  const val=motif+(detail?' — '+detail:'');
+  const today=todayStr();
+  const a=DATA.apprenants[idx];
+  const ab=a.absences.find(x=>x.date===today);
+  const re=a.retards.find(x=>x.date===today);
+  if(ab)ab.justif=val;
+  if(re)re.justif=val;
+  addHistorique('Justification',`${a.prenom} ${a.nom} : ${motif}`);
+  closeModal('modal-justif');renderPresences();save();
+}
+
+function openFicheAbs(idx){
+  const a=DATA.apprenants[idx];
+  document.getElementById('fiche-abs-title').textContent=`${a.prenom} ${a.nom} — Détail absences & retards`;
+  let html='';
+  if(a.absences.length){
+    html+=`<div style="font-weight:600;font-size:12px;color:var(--danger);margin-bottom:6px;">Absences (${a.absences.length})</div>`;
+    html+=a.absences.map(x=>`<div class="abs-detail-row"><span class="abs-date">${formatDate(x.date)}</span><span class="abs-cours">${x.cours}</span>${x.justif?`<span class="abs-justif">✓ ${x.justif}</span>`:'<span style="font-size:11px;color:var(--gray-300);">Non justifié</span>'}</div>`).join('');
+  }
+  if(a.retards.length){
+    html+=`<div style="font-weight:600;font-size:12px;color:var(--warning);margin:10px 0 6px;">Retards (${a.retards.length})</div>`;
+    html+=a.retards.map(x=>`<div class="abs-detail-row"><span class="abs-date">${formatDate(x.date)}</span><span class="abs-cours">${x.cours}</span>${x.justif?`<span class="abs-justif">✓ ${x.justif}</span>`:'<span style="font-size:11px;color:var(--gray-300);">Non justifié</span>'}</div>`).join('');
+  }
+  if(!a.absences.length&&!a.retards.length)html='<div class="alert alert-success"><span class="ai">✓</span>Aucune absence ni retard enregistré.</div>';
+  document.getElementById('fiche-abs-content').innerHTML=html;
+  openModal('modal-fiche-abs');
+}
+
+function updatePresStats(){
+  const p=DATA.apprenants.filter(a=>a.statut==='present').length;
+  const ab=DATA.apprenants.filter(a=>a.statut==='absent').length;
+  const r=DATA.apprenants.filter(a=>a.statut==='retard').length;
+  const t=DATA.apprenants.length;
+  document.getElementById('p-present').textContent=p;
+  document.getElementById('p-absent').textContent=ab;
+  document.getElementById('p-retard').textContent=r;
+  document.getElementById('p-taux').textContent=Math.round(p/t*100)+'%';
+}
+
+function renderAbsRepetees(){
+  const el=document.getElementById('absences-repetees');
+  const cas=DATA.apprenants.filter(a=>a.absences.length>=3);
+  if(!cas.length){el.innerHTML='<div style="font-size:12px;color:var(--gray-300);">Aucune absence répétée.</div>';return;}
+  el.innerHTML=cas.map(a=>`<div class="alert alert-danger"><span class="ai">⚠</span><div><strong>${a.prenom} ${a.nom}</strong> (${a.filiere} — ${a.niveau}) — ${a.absences.length} absences · ${a.absences.filter(x=>!x.justif).length} non justifiées <button class="btn btn-ghost btn-sm" onclick="openFicheAbs(${DATA.apprenants.indexOf(a)})" style="margin-left:8px;">Voir détail</button></div></div>`).join('');
+}
+
+function addApprenant(){
+  const p=document.getElementById('ap-prenom').value.trim();
+  const n=document.getElementById('ap-nom').value.trim();
+  if(!p||!n)return;
+  DATA.apprenants.push({prenom:p,nom:n,filiere:document.getElementById('ap-filiere').value,niveau:document.getElementById('ap-niveau').value,statut:'present',absences:[],retards:[]});
+  addHistorique('Ajout',`${p} ${n} inscrit(e)`);
+  closeModal('modal-add-apprenant');renderPresences();save();
+}
+
+// ========== PROFESSEURS ==========
+function renderProfs(){
+  const tbody=document.getElementById('profs-tbody');
+  tbody.innerHTML=DATA.professeurs.map((p,i)=>{
+    const hTot=p.hThFait+p.hPrFait;
+    const hTotPrevu=p.hThPrevu+p.hPrPrevu;
+    const pct=Math.round(hTot/hTotPrevu*100);
+    const sc=p.statut==='present'?'present':p.statut==='absent'?'absent':'retard';
+    return `<tr>
+      <td><div style="display:flex;align-items:center;gap:7px;"><div class="avatar">${p.prenom[0]}${p.nom[0]}</div><span>${p.prenom} ${p.nom}</span></div></td>
+      <td><div style="font-size:12px;">${p.matiere}</div><span class="badge badge-purple" style="font-size:10px;">${p.filiere}</span></td>
+      <td><select class="sel-status ${sc}" onchange="changeStatutProf(${i},this)">${['present','absent','retard'].map(s=>`<option value="${s}"${p.statut===s?' selected':''}>${s==='present'?'✓ Présent':s==='absent'?'✗ Absent':'⏱ Retard'}</option>`).join('')}</select></td>
+      <td><span class="badge badge-th">${p.hThFait}h / ${p.hThPrevu}h</span></td>
+      <td><span class="badge badge-pr">${p.hPrFait}h / ${p.hPrPrevu}h</span></td>
+      <td><strong style="color:var(--violet);">${hTot}h</strong><span style="font-size:11px;color:var(--gray-400);"> / ${hTotPrevu}h</span></td>
+      <td style="min-width:110px;">
+        <div class="prog-bg"><div class="prog-fill" style="width:${pct}%;background:${pct>=80?'var(--success)':pct>=50?'var(--violet)':'var(--warning)'};"></div></div>
+        <div class="prog-pct">${pct}%</div>
+      </td>
+      <td><button class="btn btn-ghost btn-sm" onclick="updateHeures(${i})">✏️ Heures</button></td>
+    </tr>`;
+  }).join('');
+  updateProfStats();
+}
+
+function changeStatutProf(i,sel){
+  DATA.professeurs[i].statut=sel.value;
+  sel.className='sel-status '+sel.value;
+  addHistorique('Prof',`${DATA.professeurs[i].prenom} ${DATA.professeurs[i].nom} → ${sel.value}`);
+  renderProfs();updateDashboard();save();
+}
+
+function updateHeures(i){
+  const p=DATA.professeurs[i];
+  const th=prompt(`Heures de THÉORIE dispensées par ${p.prenom} ${p.nom} (actuel: ${p.hThFait}h/${p.hThPrevu}h):`);
+  if(th===null)return;
+  const pr=prompt(`Heures de PRATIQUE dispensées par ${p.prenom} ${p.nom} (actuel: ${p.hPrFait}h/${p.hPrPrevu}h):`);
+  if(pr===null)return;
+  if(!isNaN(th))p.hThFait=Math.min(parseInt(th),p.hThPrevu);
+  if(!isNaN(pr))p.hPrFait=Math.min(parseInt(pr),p.hPrPrevu);
+  addHistorique('Heures',`${p.prenom} ${p.nom} : TH=${p.hThFait}h PR=${p.hPrFait}h`);
+  renderProfs();save();
+}
+
+function updateProfStats(){
+  const p=DATA.professeurs.filter(x=>x.statut==='present').length;
+  const ab=DATA.professeurs.filter(x=>x.statut==='absent').length;
+  const r=DATA.professeurs.filter(x=>x.statut==='retard').length;
+  const avg=Math.round(DATA.professeurs.reduce((s,x)=>s+(x.hThFait+x.hPrFait)/(x.hThPrevu+x.hPrPrevu),0)/DATA.professeurs.length*100);
+  document.getElementById('pr-present').textContent=p;
+  document.getElementById('pr-absent').textContent=ab;
+  document.getElementById('pr-retard').textContent=r;
+  document.getElementById('pr-avance').textContent=avg+'%';
+}
+
+function addProf(){
+  const p=document.getElementById('pr-prenom').value.trim();
+  const n=document.getElementById('pr-nom').value.trim();
+  if(!p||!n)return;
+  DATA.professeurs.push({prenom:p,nom:n,matiere:document.getElementById('pr-matiere').value,filiere:document.getElementById('pr-filiere').value,statut:'present',hThPrevu:parseInt(document.getElementById('pr-hth').value)||60,hPrPrevu:parseInt(document.getElementById('pr-hpr').value)||60,hThFait:0,hPrFait:0});
+  addHistorique('Ajout','Prof '+p+' '+n+' ajouté(e)');
+  closeModal('modal-add-prof');renderProfs();save();
+}
+
+// ========== EDT ==========
+function buildEDTGrid(cours,containerId){
+  const h=DATA.horaires;
+  let html=`<div class="edt-grid" style="grid-template-columns:85px repeat(${JOURS.length},1fr);">`;
+  html+='<div class="edt-head"></div>';
+  JOURS.forEach(j=>html+=`<div class="edt-head">${j}</div>`);
+  h.forEach(cr=>{
+    html+=`<div class="edt-time">${cr}</div>`;
+    JOURS.forEach(jour=>{
+      const c=cours.find(x=>x.jour===jour&&x.creneau===cr);
+      if(c){
+        const cl=COULEURS[c.filiere]||'c1';
+        const typeBadge=c.type==='th'?'📘':'🔧';
+        html+=`<div class="edt-cell ${cl}" title="${c.prof} — ${c.salle||''}">
+          <strong style="font-size:9.5px;">${c.matiere.substring(0,13)}</strong>
+          <span style="font-size:8.5px;opacity:.8;">${c.prof.split(' ').pop()}</span>
+          <span style="font-size:8.5px;">${typeBadge} ${c.niveau}</span>
+        </div>`;
+      } else {
+        html+=`<div class="edt-empty" onclick="prefillEDT('${jour}','${cr}')"></div>`;
+      }
+    });
+  });
+  html+='</div>';
+  document.getElementById(containerId).innerHTML=html;
+  detectConflits();
+}
+
+function renderEDTGeneral(){
+  const ff=document.getElementById('edt-filiere').value;
+  const fn=document.getElementById('edt-niveau').value;
+  let cours=DATA.cours;
+  if(ff)cours=cours.filter(c=>c.filiere===ff);
+  if(fn)cours=cours.filter(c=>c.niveau===fn);
+  buildEDTGrid(cours,'edt-general-grid');
+  updateWeekLabel();
+}
+function renderEDTProf(){
+  const nom=document.getElementById('edt-prof-select').value;
+  const cours=nom?DATA.cours.filter(c=>c.prof===nom):DATA.cours;
+  buildEDTGrid(cours,'edt-prof-grid');
+}
+function renderEDTClasse(){
+  const ff=document.getElementById('edt-classe-filiere').value;
+  const fn=document.getElementById('edt-classe-niveau').value;
+  let cours=DATA.cours;
+  if(ff)cours=cours.filter(c=>c.filiere===ff);
+  if(fn)cours=cours.filter(c=>c.niveau===fn);
+  buildEDTGrid(cours,'edt-classe-grid');
+}
+
+function populateSelects(){
+  const opts=DATA.professeurs.map(p=>`<option>${p.prenom} ${p.nom}</option>`).join('');
+  const cOpts=DATA.horaires.map(h=>`<option>${h}</option>`).join('');
+  ['edt-prof-select','c-prof'].forEach(id=>{const el=document.getElementById(id);if(el){el.innerHTML=(id==='edt-prof-select'?'<option value="">— Tous —</option>':'')+opts;}});
+  const cs=document.getElementById('c-creneau');if(cs)cs.innerHTML=cOpts;
+  const ctP=document.getElementById('ct-prof');if(ctP)ctP.innerHTML=opts;
+  const ctC=document.getElementById('ct-creneau');if(ctC)ctC.innerHTML=cOpts;
+  const cfP=document.getElementById('ct-filter-prof');if(cfP)cfP.innerHTML='<option value="">Tous</option>'+opts;
+}
+
+function prefillEDT(jour,creneau){
+  openModal('modal-add-cours');
+  document.getElementById('c-jour').value=jour;
+  document.getElementById('c-creneau').value=creneau;
+}
+
+function addCours(){
+  DATA.cours.push({jour:document.getElementById('c-jour').value,creneau:document.getElementById('c-creneau').value,prof:document.getElementById('c-prof').value,matiere:document.getElementById('c-matiere').value,type:document.getElementById('c-type').value,salle:document.getElementById('c-salle').value,filiere:document.getElementById('c-filiere').value,niveau:document.getElementById('c-niveau').value});
+  addHistorique('EDT','Cours ajouté');
+  closeModal('modal-add-cours');renderEDTGeneral();save();
+}
+
+function detectConflits(){
+  const el=document.getElementById('edt-conflits');if(!el)return;
+  const conflits=[];
+  DATA.cours.forEach((c1,i)=>DATA.cours.forEach((c2,j)=>{
+    if(i>=j)return;
+    if(c1.jour===c2.jour&&c1.creneau===c2.creneau&&c1.salle&&c1.salle===c2.salle)conflits.push(`Conflit salle : ${c1.jour} ${c1.creneau} — "${c1.salle}" : ${c1.prof} et ${c2.prof}`);
+    if(c1.jour===c2.jour&&c1.creneau===c2.creneau&&c1.prof===c2.prof)conflits.push(`Conflit prof : ${c1.prof} a 2 cours simultanés le ${c1.jour} à ${c1.creneau}`);
+  }));
+  el.innerHTML=conflits.length?conflits.map(c=>`<div class="alert alert-danger"><span class="ai">⚠</span>${c}</div>`).join(''):`<div class="alert alert-success"><span class="ai">✓</span>Aucun conflit détecté.</div>`;
+}
+
+function changeWeek(d){DATA.weekOffset+=d;updateWeekLabel();}
+function updateWeekLabel(){
+  const now=new Date();now.setDate(now.getDate()+DATA.weekOffset*7);
+  const lundi=new Date(now);lundi.setDate(now.getDate()-now.getDay()+1);
+  const sam=new Date(lundi);sam.setDate(lundi.getDate()+5);
+  const fmt=d=>d.toLocaleDateString('fr-FR',{day:'numeric',month:'short'});
+  const el=document.getElementById('week-label');if(el)el.textContent=`${fmt(lundi)} — ${fmt(sam)}`;
+}
+
+// ========== CAHIER DE TEXTE ==========
+function saveCahier(){
+  const prof=document.getElementById('ct-prof').value;
+  const date=document.getElementById('ct-date').value;
+  const contenu=document.getElementById('ct-contenu').value.trim();
+  if(!prof||!date||!contenu){alert('Remplis au moins le professeur, la date et le contenu.');return;}
+  const entry={
+    prof,date,
+    creneau:document.getElementById('ct-creneau').value,
+    type:document.getElementById('ct-type').value,
+    filiere:document.getElementById('ct-filiere').value,
+    niveau:document.getElementById('ct-niveau').value,
+    matiere:document.getElementById('ct-matiere').value,
+    contenu,
+    arret:document.getElementById('ct-arret').value,
+  };
+  DATA.cahier.unshift(entry);
+  // Mettre à jour les heures du prof
+  const p=DATA.professeurs.find(x=>x.prenom+' '+x.nom===prof);
+  if(p){
+    if(entry.type==='th')p.hThFait=Math.min(p.hThFait+2,p.hThPrevu);
+    else p.hPrFait=Math.min(p.hPrFait+2,p.hPrPrevu);
+  }
+  addHistorique('Cahier',`${prof} — ${entry.matiere} (${formatDate(date)})`);
+  document.getElementById('ct-contenu').value='';
+  document.getElementById('ct-arret').value='';
+  document.getElementById('ct-matiere').value='';
+  renderCahier();save();
+}
+
+function renderCahier(){
+  const fp=document.getElementById('ct-filter-prof').value;
+  const ff=document.getElementById('ct-filter-filiere').value;
+  const ft=document.getElementById('ct-filter-type').value;
+  let data=DATA.cahier;
+  if(fp)data=data.filter(x=>x.prof===fp);
+  if(ff)data=data.filter(x=>x.filiere===ff);
+  if(ft)data=data.filter(x=>x.type===ft);
+  const el=document.getElementById('cahier-list');
+  if(!data.length){el.innerHTML='<span class="ia-placeholder">Aucune entrée pour ces filtres.</span>';return;}
+  el.innerHTML=data.map(e=>`
+    <div class="ct-entry">
+      <div class="ct-header">
+        <span class="ct-date">${formatDate(e.date)}</span>
+        <span class="ct-heure">${e.creneau}</span>
+        <span class="ct-type ${e.type}">${e.type==='th'?'📘 Théorie':'🔧 Pratique'}</span>
+        <span class="ct-matiere">${e.matiere} — ${e.filiere} / ${e.niveau}</span>
+        <span style="font-size:11px;color:var(--gray-400);">par <strong>${e.prof}</strong></span>
+      </div>
+      <div class="ct-contenu">${e.contenu}</div>
+      ${e.arret?`<div style="font-size:11px;color:var(--violet);margin-top:4px;background:var(--violet-xpale);padding:4px 8px;border-radius:4px;">📍 Arrêté à : ${e.arret}</div>`:''}
+    </div>`).join('');
+}
+
+// ========== NOTES ==========
+function renderNotes(){
+  const ff=document.getElementById('notes-filiere').value;
+  const fn=document.getElementById('notes-niveau').value;
+  let data=DATA.notes;
+  if(ff)data=data.filter(n=>n.filiere===ff);
+  if(fn)data=data.filter(n=>n.niveau===fn);
+  document.getElementById('notes-tbody').innerHTML=data.map((n,i)=>{
+    const cl=n.note>=14?'var(--success)':n.note>=10?'var(--warning)':'var(--danger)';
+    return `<tr>
+      <td>${n.apprenant}</td>
+      <td><span class="badge badge-purple">${n.filiere} / ${n.niveau}</span></td>
+      <td>${n.matiere}</td>
+      <td><strong style="color:${cl};font-size:15px;">${n.note}</strong><span style="font-size:11px;color:var(--gray-400);">/20</span></td>
+      <td><span class="badge badge-purple">${n.type}</span></td>
+      <td style="font-size:11px;color:var(--gray-400);">${formatDate(n.date)}</td>
+      <td style="font-size:11px;color:var(--gray-600);">${n.obs||'—'}</td>
+    </tr>`;
+  }).join('');
+}
+
+function populateNoteAppr(){
+  const opts=DATA.apprenants.map(a=>`<option>${a.prenom} ${a.nom}</option>`).join('');
+  const sel=document.getElementById('notes-appr-select');if(sel)sel.innerHTML=opts;
+  const nSel=document.getElementById('n-apprenant');if(nSel)nSel.innerHTML=opts;
+  if(DATA.apprenants.length)renderFicheApprenant();
+}
+
+function renderFicheApprenant(){
+  const sel=document.getElementById('notes-appr-select');if(!sel)return;
+  const nom=sel.value;
+  const notes=DATA.notes.filter(n=>n.apprenant===nom);
+  const appr=DATA.apprenants.find(a=>a.prenom+' '+a.nom===nom);
+  const el=document.getElementById('fiche-apprenant');
+  if(!appr){el.innerHTML='';return;}
+  if(!notes.length){el.innerHTML=`<div class="alert alert-info"><span class="ai">ℹ</span>Aucune note enregistrée pour cet apprenant.</div>`;return;}
+  const moy=notes.reduce((s,n)=>s+n.note,0)/notes.length;
+  const byMat={};
+  notes.forEach(n=>{if(!byMat[n.matiere])byMat[n.matiere]=[];byMat[n.matiere].push(n.note);});
+  const moyMat=Object.entries(byMat).map(([m,ns])=>({mat:m,moy:(ns.reduce((a,b)=>a+b,0)/ns.length).toFixed(1)}));
+  el.innerHTML=`
+    <div style="display:flex;gap:10px;margin-bottom:12px;align-items:flex-start;">
+      <div class="avatar" style="width:40px;height:40px;font-size:14px;">${appr.prenom[0]}${appr.nom[0]}</div>
+      <div>
+        <div style="font-weight:600;font-size:14px;">${appr.prenom} ${appr.nom}</div>
+        <div style="font-size:12px;color:var(--gray-400);">${appr.filiere} — ${appr.niveau}</div>
+        <div style="font-size:11px;margin-top:3px;">${appr.absences.length} abs. · ${appr.retards.length} ret.</div>
+      </div>
+      <div style="margin-left:auto;text-align:center;background:var(--violet-pale);border-radius:8px;padding:10px 18px;">
+        <div style="font-size:26px;font-weight:700;color:${moy>=14?'var(--success)':moy>=10?'var(--warning)':'var(--danger)'};">${moy.toFixed(1)}</div>
+        <div style="font-size:11px;color:var(--gray-400);">Moyenne générale</div>
+      </div>
+    </div>
+    <div class="notes-grid">${moyMat.map(m=>{const cl=parseFloat(m.moy)>=14?'bon':parseFloat(m.moy)>=10?'moyen':'faible';return `<div class="note-box ${cl}"><div class="nval">${m.moy}</div><div class="nmat">${m.mat}</div></div>`}).join('')}</div>
+    <table class="tbl">
+      <thead><tr><th>Matière</th><th>Note</th><th>Type</th><th>Date</th><th>Obs.</th></tr></thead>
+      <tbody>${notes.map(n=>`<tr><td>${n.matiere}</td><td><strong style="color:${n.note>=14?'var(--success)':n.note>=10?'var(--warning)':'var(--danger)'};">${n.note}/20</strong></td><td><span class="badge badge-purple">${n.type}</span></td><td style="font-size:11px;color:var(--gray-400);">${formatDate(n.date)}</td><td style="font-size:11px;">${n.obs||'—'}</td></tr>`).join('')}</tbody>
+    </table>`;
+}
+
+function addNote(){
+  const note=parseFloat(document.getElementById('n-note').value);
+  if(isNaN(note)||note<0||note>20){alert('Note invalide (0-20)');return;}
+  DATA.notes.push({apprenant:document.getElementById('n-apprenant').value,filiere:'',niveau:'',matiere:document.getElementById('n-matiere').value,note,type:document.getElementById('n-type').value,date:document.getElementById('n-date').value||todayStr(),obs:document.getElementById('n-obs').value});
+  addHistorique('Note',`${document.getElementById('n-apprenant').value} — ${note}/20 en ${document.getElementById('n-matiere').value}`);
+  closeModal('modal-add-note');renderNotes();populateNoteAppr();save();
+}
+
+// ========== DASHBOARD ==========
+function updateDashboard(){
+  const p=DATA.apprenants.filter(a=>a.statut==='present').length;
+  const ab=DATA.apprenants.filter(a=>a.statut==='absent').length;
+  const r=DATA.apprenants.filter(a=>a.statut==='retard').length;
+  const t=DATA.apprenants.length;
+  const pP=DATA.professeurs.filter(x=>x.statut==='present').length;
+  document.getElementById('d-present').textContent=p;
+  document.getElementById('d-absent').textContent=ab;
+  document.getElementById('d-retard').textContent=r;
+  document.getElementById('d-taux').textContent=Math.round(p/t*100)+'% de présence';
+  document.getElementById('d-profs').textContent=pP;
+  const cas=DATA.apprenants.filter(a=>a.absences.length>=3);
+  const absP=DATA.professeurs.filter(x=>x.statut==='absent');
+  let html='';
+  cas.forEach(a=>html+=`<div class="alert alert-danger"><span class="ai">⚠</span>${a.prenom} ${a.nom} — ${a.absences.length} absences répétées</div>`);
+  absP.forEach(p=>html+=`<div class="alert alert-warning"><span class="ai">⚠</span>Prof ${p.prenom} ${p.nom} absent(e) — ${p.matiere}</div>`);
+  if(!html)html='<div class="alert alert-success"><span class="ai">✓</span>Aucune alerte pour aujourd\'hui.</div>';
+  document.getElementById('d-alerts').innerHTML=html;
+}
+
+function updateNavBadge(){document.getElementById('nb-absent').textContent=DATA.apprenants.filter(a=>a.statut==='absent').length;}
+
+function renderHistorique(){
+  const el=document.getElementById('d-historique');
+  if(!DATA.historique.length){el.innerHTML='<div style="font-size:12px;color:var(--gray-300);">Aucune activité.</div>';return;}
+  el.innerHTML=DATA.historique.slice(0,7).map(h=>`<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--gray-100);"><span class="badge badge-purple">${h.type}</span><span style="font-size:12px;color:var(--gray-600);flex:1;">${h.desc}</span><span style="font-size:11px;color:var(--gray-300);">${h.time}</span></div>`).join('');
+}
+
+function addHistorique(type,desc){
+  const now=new Date();
+  DATA.historique.unshift({type,desc,time:now.getHours()+':'+String(now.getMinutes()).padStart(2,'0')});
+  if(DATA.historique.length>30)DATA.historique.pop();
+  renderHistorique();
+}
+
+// ========== IA ==========
+const QUICK=[
+  {label:'Rapport absences',fn:()=>`Génère un rapport officiel d'absences pour le CFPADC du ${new Date().toLocaleDateString('fr-FR')}.\nAbsents: ${DATA.apprenants.filter(a=>a.statut==='absent').map(a=>`${a.prenom} ${a.nom} (${a.filiere}/${a.niveau})`).join(', ')||'aucun'}.\nRetards: ${DATA.apprenants.filter(a=>a.statut==='retard').map(a=>`${a.prenom} ${a.nom}`).join(', ')||'aucun'}.`},
+  {label:'Bilan heures profs',fn:()=>`Génère un bilan officiel des heures dispensées par les professeurs du CFPADC:\n${DATA.professeurs.map(p=>`• ${p.prenom} ${p.nom} (${p.matiere}): Théorie ${p.hThFait}h/${p.hThPrevu}h — Pratique ${p.hPrFait}h/${p.hPrPrevu}h — Total ${p.hThFait+p.hPrFait}h/${p.hThPrevu+p.hPrPrevu}h`).join('\n')}`},
+  {label:'Résumé cahier de texte',fn:()=>`Génère une synthèse de l'avancement des cours au CFPADC à partir du cahier de texte:\n${DATA.cahier.slice(0,5).map(e=>`• ${e.prof} — ${e.matiere} (${formatDate(e.date)}): ${e.contenu.substring(0,80)}... Arrêté à: ${e.arret||'non précisé'}`).join('\n')}`},
+  {label:'Convocation apprenant',fn:()=>{const a=DATA.apprenants.filter(x=>x.absences.length>=3)[0];return a?`Rédige une convocation officielle pour l'apprenant ${a.prenom} ${a.nom} (${a.filiere} — ${a.niveau}) suite à ${a.absences.length} absences au CFPADC, dont ${a.absences.filter(x=>!x.justif).length} non justifiées.`:`Rédige un modèle de convocation pour absences répétées au CFPADC.`;}},
+  {label:'Bilan notes classe',fn:()=>`Génère un bilan des notes des apprenants du CFPADC:\n${DATA.notes.map(n=>`${n.apprenant}: ${n.note}/20 en ${n.matiere} (${n.type})`).join('\n')}`},
+  {label:'Signalement prof absent',fn:()=>{const a=DATA.professeurs.filter(p=>p.statut==='absent')[0];return a?`Rédige un signalement d'absence du professeur ${a.prenom} ${a.nom} (${a.matiere} — ${a.filiere}) à la direction du CFPADC.`:`Rédige un modèle de signalement d'absence de professeur.`;}},
+];
+
+function renderQuickBtns(){document.getElementById('quick-btns-ia').innerHTML=QUICK.map((q,i)=>`<button class="quick-btn" onclick="fillIA(${i})">${q.label}</button>`).join('');}
+function fillIA(i){document.getElementById('ia-prompt').value=QUICK[i].fn();}
+
+async function runIA(){
+  const prompt=document.getElementById('ia-prompt').value.trim();if(!prompt)return;
+  const btn=document.getElementById('ia-btn');const box=document.getElementById('ia-result');
+  btn.disabled=true;btn.textContent='...';
+  box.innerHTML='<div style="display:flex;align-items:center;gap:8px;color:var(--gray-400);font-size:12px;"><div class="dots"><span></span><span></span><span></span></div> Génération...</div>';
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1000,messages:[{role:'user',content:`Tu es l'assistant du Surveillant Général du CFPADC (Centre de Formation Professionnelle Atelier des Chefs) à Saint-Louis, Sénégal. Filières: Restauration, Pâtisserie, Couture, Gestion & Comptabilité, Secrétariat Bureautique. Niveaux: CPS (3 mois/6 mois/1 an), CAP 1-3, BT 1-3, BTS 1-2. Rédige le document demandé en français, de façon professionnelle et formelle.\n\n${prompt}`}]})});
+    const data=await res.json();
+    const text=data.content?.map(i=>i.text||'').join('\n')||'Erreur.';
+    box.textContent=text;
+    addHistorique('IA','Document: '+prompt.substring(0,35)+'…');
+  }catch(e){box.innerHTML='<span class="ia-placeholder">Erreur de connexion à l\'API Claude.</span>';}
+  btn.disabled=false;btn.textContent='✨ Générer';
+}
+function copyResult(){navigator.clipboard.writeText(document.getElementById('ia-result').textContent).then(()=>alert('Copié !'));}
+
+// ========== RAPPORTS ==========
+async function genRapport(type){
+  const prompts={
+    'presences-jour':`Rapport de présence du ${new Date().toLocaleDateString('fr-FR')} au CFPADC. Apprenants: ${DATA.apprenants.map(a=>`${a.prenom} ${a.nom} (${a.filiere}/${a.niveau}): ${a.statut}`).join(', ')}`,
+    'heures-profs':`Bilan des heures dispensées au CFPADC:\n${DATA.professeurs.map(p=>`${p.prenom} ${p.nom} — ${p.matiere}: TH ${p.hThFait}/${p.hThPrevu}h · PR ${p.hPrFait}/${p.hPrPrevu}h · Total ${p.hThFait+p.hPrFait}/${p.hThPrevu+p.hPrPrevu}h`).join('\n')}`,
+    'avancement-cours':`Synthèse du cahier de texte du CFPADC:\n${DATA.cahier.slice(0,8).map(e=>`${e.prof} — ${e.matiere} le ${formatDate(e.date)} (${e.type==='th'?'Théorie':'Pratique'}): ${e.contenu.substring(0,100)}. Arrêté à: ${e.arret||'non précisé'}`).join('\n')}`,
+    'convocation':`Rédige un modèle de convocation officielle pour absences répétées au CFPADC, avec espaces à compléter.`,
+    'bilan-notes':`Bilan des évaluations au CFPADC:\n${DATA.notes.map(n=>`${n.apprenant}: ${n.note}/20 en ${n.matiere} (${n.type} du ${formatDate(n.date)})${n.obs?' — '+n.obs:''}`).join('\n')}`,
+    'signalement-prof':`Modèle de signalement d'absence de formateur au CFPADC à destination du directeur, avec espaces à compléter.`,
+  };
+  const box=document.getElementById('rapport-result');
+  box.innerHTML='<div style="display:flex;align-items:center;gap:8px;color:var(--gray-400);font-size:12px;"><div class="dots"><span></span><span></span><span></span></div> Génération...</div>';
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1000,messages:[{role:'user',content:`Tu es l'assistant du Surveillant Général du CFPADC à Saint-Louis, Sénégal. ${prompts[type]}`}]})});
+    const data=await res.json();
+    box.textContent=data.content?.map(i=>i.text||'').join('\n')||'Erreur.';
+  }catch(e){box.innerHTML='<span class="ia-placeholder">Erreur API.</span>';}
+}
+
+// ========== SYNC ==========
+async function syncSheets(){
+  const url=DATA.config.scriptUrl;
+  if(!url){alert('Configure l\'URL du Google Apps Script dans les Paramètres.');return;}
+  document.getElementById('sync-dot').classList.add('pending');
+  document.getElementById('sync-label').textContent='En cours...';
+  try{
+    await fetch(url,{method:'POST',mode:'no-cors',body:JSON.stringify({action:'sync',data:DATA})});
+    document.getElementById('sync-dot').classList.remove('pending');
+    document.getElementById('sync-label').textContent='Synchronisé '+new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+    addHistorique('Sync','Google Sheets synchronisé');
+  }catch(e){document.getElementById('sync-label').textContent='Échec sync';}
+}
+
+// ========== CONFIG AVANCÉE ==========
+
+// Données config étendues
+if(!DATA.config.etablissement) DATA.config.etablissement={
+  nom:'CFPADC',nomComplet:'Centre de Formation Professionnelle Atelier des Chefs',
+  ville:'Saint-Louis, Sénégal',tel:'',email:'',adresse:'',
+  directeur:'',sg:'Amadou Ousmane Sall',annee:'2024-2025',semestre:'1',debut:'',fin:''
+};
+if(!DATA.config.filieres) DATA.config.filieres=['Restauration','Pâtisserie','Couture','Gestion & Comptabilité','Secrétariat Bureautique'];
+if(!DATA.config.niveaux) DATA.config.niveaux=['CPS 3 mois','CPS 6 mois','CPS 1 an','CAP 1','CAP 2','CAP 3','BT 1','BT 2','BT 3','BTS 1','BTS 2'];
+if(!DATA.config.salles) DATA.config.salles=[{nom:'Cuisine A',type:'Cuisine / Atelier',cap:20,filiere:'Restauration'},{nom:'Cuisine B',type:'Cuisine / Atelier',cap:15,filiere:'Pâtisserie'},{nom:'Atelier Couture',type:'Atelier Couture',cap:25,filiere:'Couture'},{nom:'Salle 1',type:'Salle de cours',cap:30,filiere:''},{nom:'Salle Informatique',type:'Salle informatique',cap:20,filiere:'Secrétariat Bureautique'}];
+if(!DATA.config.utilisateurs) DATA.config.utilisateurs=[{prenom:'Amadou Ousmane',nom:'Sall',login:'sg.sall',role:'sg',pwd:'1234',acces:['presences','professeurs','edt','cahier','notes','rapports','config']}];
+if(!DATA.config.periodes) DATA.config.periodes=[{nom:'1er Semestre',debut:'2024-10-01',fin:'2025-01-31'},{nom:'2ème Semestre',debut:'2025-02-01',fin:'2025-06-30'}];
+if(!DATA.config.calendrier) DATA.config.calendrier=[{nom:'Rentrée scolaire',date:'2024-10-01'},{nom:'Examens S1',date:'2025-01-20'}];
+if(!DATA.config.pwd) DATA.config.pwd='1234';
+
+let cfgUnlocked = false;
+
+function showPage(id,el){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  if(el)el.classList.add('active');
+  const titles={accueil:'Tableau de bord',presences:'Présences apprenants',professeurs:'Suivi professeurs','edt-general':'Emploi du temps général','edt-profs':'EDT par professeur','edt-classes':'EDT par classe',cahier:'Cahier de texte',notes:'Notes & évaluations',ia:'Assistant IA',rapports:'Rapports & exports',config:'Paramètres avancés'};
+  document.getElementById('page-title').textContent=titles[id]||id;
+  if(id==='presences')renderPresences();
+  if(id==='professeurs')renderProfs();
+  if(id==='edt-general')renderEDTGeneral();
+  if(id==='edt-profs'){populateSelects();renderEDTProf();}
+  if(id==='edt-classes')renderEDTClasse();
+  if(id==='cahier')renderCahier();
+  if(id==='notes'){renderNotes();populateNoteAppr();}
+  if(id==='config'){
+    if(!cfgUnlocked){showLock();}
+    else{renderConfigAll();}
+  }
+}
+
+function showLock(){
+  const lock=document.getElementById('cfg-lock');
+  lock.style.display='flex';
+  document.getElementById('cfg-pwd-input').value='';
+  document.getElementById('cfg-pwd-err').style.display='none';
+}
+
+function checkPwd(){
+  const val=document.getElementById('cfg-pwd-input').value;
+  if(val===DATA.config.pwd){
+    cfgUnlocked=true;
+    document.getElementById('cfg-lock').style.display='none';
+    renderConfigAll();
+  } else {
+    document.getElementById('cfg-pwd-err').style.display='block';
+  }
+}
+
+function changePwd(){
+  const old=document.getElementById('cfg-pwd-old').value;
+  const nw=document.getElementById('cfg-pwd-new').value;
+  if(old!==DATA.config.pwd){alert('Mot de passe actuel incorrect.');return;}
+  if(nw.length<3){alert('Le nouveau mot de passe doit avoir au moins 3 caractères.');return;}
+  DATA.config.pwd=nw;save();alert('Mot de passe modifié avec succès !');
+}
+
+function showCfgTab(id,el){
+  document.querySelectorAll('.cfg-tab').forEach(t=>t.style.display='none');
+  document.querySelectorAll('.subtab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('cfgtab-'+id).style.display='block';
+  if(el)el.classList.add('active');
+  if(id==='filieres')renderFilieres();
+  if(id==='salles')renderSalles();
+  if(id==='utilisateurs')renderUsers();
+  if(id==='periodes')renderPeriodes();
+  if(id==='systeme')renderSysteme();
+}
+
+function renderConfigAll(){
+  // Établissement
+  const e=DATA.config.etablissement;
+  document.getElementById('cfg-nom-etab').value=e.nom||'';
+  document.getElementById('cfg-nom-complet').value=e.nomComplet||'';
+  document.getElementById('cfg-ville').value=e.ville||'';
+  document.getElementById('cfg-tel').value=e.tel||'';
+  document.getElementById('cfg-email').value=e.email||'';
+  document.getElementById('cfg-adresse').value=e.adresse||'';
+  document.getElementById('cfg-directeur').value=e.directeur||'';
+  document.getElementById('cfg-sg').value=e.sg||'';
+  document.getElementById('cfg-annee').value=e.annee||'';
+  document.getElementById('cfg-semestre').value=e.semestre||'1';
+  document.getElementById('cfg-debut').value=e.debut||'';
+  document.getElementById('cfg-fin').value=e.fin||'';
+  renderHeaderPreview();
+  renderFilieres();
+}
+
+function renderHeaderPreview(){
+  const e=DATA.config.etablissement;
+  document.getElementById('cfg-header-preview').innerHTML=`
+    <div style="text-align:center;border-bottom:1px solid var(--gray-200);padding-bottom:10px;margin-bottom:8px;">
+      <div style="font-size:15px;font-weight:700;color:var(--violet);">${e.nomComplet||'CFPADC'}</div>
+      <div style="font-size:12px;color:var(--gray-400);">${e.ville||''} ${e.tel?'· Tel: '+e.tel:''} ${e.email?'· '+e.email:''}</div>
+    </div>
+    <div style="display:flex;justify-content:space-between;font-size:12px;">
+      <span><strong>Directeur :</strong> ${e.directeur||'—'}</span>
+      <span><strong>Année scolaire :</strong> ${e.annee||'—'}</span>
+      <span><strong>Semestre :</strong> ${e.semestre||'1'}</span>
+    </div>
+    <div style="font-size:11px;color:var(--gray-400);margin-top:6px;">Surveillant Général : <strong>${e.sg||'—'}</strong></div>`;
+}
+
+function saveEtablissement(){
+  DATA.config.etablissement={
+    nom:document.getElementById('cfg-nom-etab').value,
+    nomComplet:document.getElementById('cfg-nom-complet').value,
+    ville:document.getElementById('cfg-ville').value,
+    tel:document.getElementById('cfg-tel').value,
+    email:document.getElementById('cfg-email').value,
+    adresse:document.getElementById('cfg-adresse').value,
+    directeur:document.getElementById('cfg-directeur').value,
+    sg:document.getElementById('cfg-sg').value,
+    annee:document.getElementById('cfg-annee').value,
+    semestre:document.getElementById('cfg-semestre').value,
+    debut:document.getElementById('cfg-debut').value,
+    fin:document.getElementById('cfg-fin').value,
+  };
+  // Mettre à jour le nom SG dans la sidebar
+  const sgEl=document.querySelector('.user-name');
+  if(sgEl&&DATA.config.etablissement.sg)sgEl.textContent=DATA.config.etablissement.sg;
+  save();renderHeaderPreview();
+  alert('Informations de l\'établissement sauvegardées !');
+}
+
+// FILIÈRES
+function renderFilieres(){
+  document.getElementById('filieres-list').innerHTML=DATA.config.filieres.map((f,i)=>`
+    <div class="tag-item"><span class="tag-label">📚 ${f}</span>
+      <button class="tag-del" onclick="removeFiliere(${i})">×</button>
+    </div>`).join('');
+  document.getElementById('niveaux-list').innerHTML=DATA.config.niveaux.map((n,i)=>`
+    <div class="tag-item"><span class="tag-label">🎓 ${n}</span>
+      <button class="tag-del" onclick="removeNiveau(${i})">×</button>
+    </div>`).join('');
+  document.getElementById('horaires-list').innerHTML=DATA.horaires.map((h,i)=>`
+    <div style="display:flex;gap:6px;margin-bottom:5px;">
+      <input value="${h}" onchange="DATA.horaires[${i}]=this.value;save();" style="flex:1;">
+      <button onclick="DATA.horaires.splice(${i},1);renderFilieres();" style="background:none;border:none;cursor:pointer;color:var(--danger);font-size:16px;">×</button>
+    </div>`).join('');
+}
+
+function addFiliere(){
+  const f=prompt('Nom de la nouvelle filière :');
+  if(f&&f.trim()){DATA.config.filieres.push(f.trim());save();renderFilieres();}
+}
+function removeFiliere(i){if(confirm('Supprimer cette filière ?')){DATA.config.filieres.splice(i,1);save();renderFilieres();}}
+function addNiveau(){
+  const n=prompt('Nom du nouveau niveau (ex: BTS 3) :');
+  if(n&&n.trim()){DATA.config.niveaux.push(n.trim());save();renderFilieres();}
+}
+function removeNiveau(i){if(confirm('Supprimer ce niveau ?')){DATA.config.niveaux.splice(i,1);save();renderFilieres();}}
+function addHoraire(){DATA.horaires.push('00h00-00h00');renderFilieres();}
+
+// SALLES
+function renderSalles(){
+  document.getElementById('salles-tbody').innerHTML=DATA.config.salles.map((s,i)=>`<tr>
+    <td><strong>${s.nom}</strong></td>
+    <td>${s.type}</td>
+    <td>${s.cap} places</td>
+    <td>${s.filiere||'<span style="color:var(--gray-300);">Toutes</span>'}</td>
+    <td><button class="btn btn-ghost btn-sm" onclick="removeSalle(${i})" style="color:var(--danger);">Supprimer</button></td>
+  </tr>`).join('');
+}
+function addSalle(){
+  const nom=document.getElementById('s-nom').value.trim();
+  if(!nom)return;
+  DATA.config.salles.push({nom,type:document.getElementById('s-type').value,cap:parseInt(document.getElementById('s-cap').value)||0,filiere:document.getElementById('s-filiere').value});
+  save();closeModal('modal-add-salle');renderSalles();
+}
+function removeSalle(i){if(confirm('Supprimer cette salle ?')){DATA.config.salles.splice(i,1);save();renderSalles();}}
+function openAddSalle(){openModal('modal-add-salle');}
+
+// UTILISATEURS
+function renderUsers(){
+  const roles={sg:'Surveillant Général',dir:'Directeur',prof:'Professeur',admin:'Administratif'};
+  const cls={sg:'role-sg',dir:'role-dir',prof:'role-prof',admin:'role-sg'};
+  document.getElementById('users-tbody').innerHTML=DATA.config.utilisateurs.map((u,i)=>`<tr>
+    <td><div style="display:flex;align-items:center;gap:7px;"><div class="avatar" style="width:26px;height:26px;font-size:9.5px;">${u.prenom[0]}${u.nom[0]}</div><span>${u.prenom} ${u.nom}</span></div></td>
+    <td><span class="role-badge ${cls[u.role]||'role-sg'}">${roles[u.role]||u.role}</span></td>
+    <td style="font-size:12px;color:var(--gray-400);">${u.login}</td>
+    <td style="font-size:11px;">${(u.acces||[]).join(' · ')}</td>
+    <td><button class="btn btn-ghost btn-sm" onclick="removeUser(${i})" style="color:var(--danger);">Supprimer</button></td>
+  </tr>`).join('');
+}
+
+function addUser(){
+  const p=document.getElementById('u-prenom').value.trim();
+  const n=document.getElementById('u-nom').value.trim();
+  const login=document.getElementById('u-login').value.trim();
+  if(!p||!n||!login)return;
+  const acces=[...document.querySelectorAll('#u-acces-list input:checked')].map(x=>x.value);
+  DATA.config.utilisateurs.push({prenom:p,nom:n,login,role:document.getElementById('u-role').value,pwd:document.getElementById('u-pwd').value,acces});
+  save();closeModal('modal-add-user');renderUsers();
+}
+function removeUser(i){
+  if(i===0){alert('Impossible de supprimer le compte principal.');return;}
+  if(confirm('Supprimer cet utilisateur ?')){DATA.config.utilisateurs.splice(i,1);save();renderUsers();}
+}
+
+// PÉRIODES
+function renderPeriodes(){
+  document.getElementById('periodes-list').innerHTML=DATA.config.periodes.map((p,i)=>`
+    <div class="tag-item">
+      <div><div class="tag-label" style="font-weight:600;">${p.nom}</div><div style="font-size:11px;color:var(--gray-400);">${formatDate(p.debut)} → ${formatDate(p.fin)}</div></div>
+      <button class="tag-del" onclick="removePeriode(${i})">×</button>
+    </div>`).join('');
+  document.getElementById('calendrier-list').innerHTML=DATA.config.calendrier.map((c,i)=>`
+    <div class="tag-item">
+      <span class="tag-label">${c.nom}</span>
+      <span style="font-size:11px;color:var(--gray-400);margin-right:8px;">${formatDate(c.date)}</span>
+      <button class="tag-del" onclick="removeCalendrier(${i})">×</button>
+    </div>`).join('');
+}
+function addPeriode(){
+  const nom=prompt('Nom de la période (ex: Examens Blancs) :');if(!nom)return;
+  const debut=prompt('Date début (AAAA-MM-JJ) :');
+  const fin=prompt('Date fin (AAAA-MM-JJ) :');
+  DATA.config.periodes.push({nom,debut:debut||'',fin:fin||''});save();renderPeriodes();
+}
+function removePeriode(i){DATA.config.periodes.splice(i,1);save();renderPeriodes();}
+function addCalendrier(){
+  const nom=prompt('Nom de l\'événement :');if(!nom)return;
+  const date=prompt('Date (AAAA-MM-JJ) :');
+  DATA.config.calendrier.push({nom,date:date||''});save();renderPeriodes();
+}
+function removeCalendrier(i){DATA.config.calendrier.splice(i,1);save();renderPeriodes();}
+
+// SYSTÈME
+function renderSysteme(){
+  document.getElementById('cfg-script-url').value=DATA.config.scriptUrl||'';
+  const nb=JSON.stringify(DATA).length;
+  document.getElementById('sys-info').innerHTML=`
+    <div>📦 <strong>Données stockées :</strong> ${(nb/1024).toFixed(1)} Ko dans localStorage</div>
+    <div>👥 <strong>Apprenants :</strong> ${DATA.apprenants.length}</div>
+    <div>👨‍🏫 <strong>Professeurs :</strong> ${DATA.professeurs.length}</div>
+    <div>📅 <strong>Cours EDT :</strong> ${DATA.cours.length}</div>
+    <div>📖 <strong>Entrées cahier :</strong> ${DATA.cahier.length}</div>
+    <div>📝 <strong>Notes :</strong> ${DATA.notes.length}</div>
+    <div>🔄 <strong>Dernière sync :</strong> ${document.getElementById('sync-label').textContent}</div>
+    <div>🗓️ <strong>Année scolaire :</strong> ${DATA.config.etablissement?.annee||'—'}</div>`;
+}
+
+function saveConfig(){DATA.config.scriptUrl=document.getElementById('cfg-script-url').value.trim();save();alert('Connexion Sheets sauvegardée !');}
+
+function exportConfig(){
+  const json=JSON.stringify(DATA,null,2);
+  const blob=new Blob([json],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download=`cfpadc-sauvegarde-${todayStr()}.json`;
+  a.click();URL.revokeObjectURL(url);
+  addHistorique('Export','Données exportées en JSON');
+}
+
+function importConfig(input){
+  const file=input.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const d=JSON.parse(e.target.result);
+      if(confirm('Remplacer toutes les données actuelles par cette sauvegarde ?')){
+        Object.assign(DATA,d);save();
+        alert('Données importées avec succès ! Rechargement...');
+        location.reload();
+      }
+    }catch(err){alert('Fichier invalide.');}
+  };
+  reader.readAsText(file);
+}
+
+function resetData(){
+  const pwd=prompt('Entrez le mot de passe pour confirmer la réinitialisation :');
+  if(pwd!==DATA.config.pwd){alert('Mot de passe incorrect.');return;}
+  if(!confirm('⚠️ ATTENTION : Toutes les données (apprenants, présences, notes, cahier...) seront supprimées. Cette action est irréversible. Continuer ?'))return;
+  localStorage.removeItem('cfpadc_sgv2');
+  alert('Données réinitialisées. Rechargement...');
+  location.reload();
+}
+
+// ========== UTILS ==========
+function todayStr(){const d=new Date();return d.toISOString().split('T')[0];}
+function formatDate(s){if(!s)return '—';try{return new Date(s).toLocaleDateString('fr-FR',{day:'numeric',month:'short',year:'numeric'});}catch(e){return s;}}
+
+// ========== INIT ==========
+function init(){
+  load();
+  // Init extensions config si absentes
+  if(!DATA.config.etablissement)DATA.config.etablissement={nom:'CFPADC',nomComplet:'Centre de Formation Professionnelle Atelier des Chefs',ville:'Saint-Louis, Sénégal',tel:'',email:'',adresse:'',directeur:'',sg:'Amadou Ousmane Sall',annee:'2024-2025',semestre:'1',debut:'',fin:''};
+  if(!DATA.config.filieres)DATA.config.filieres=['Restauration','Pâtisserie','Couture','Gestion & Comptabilité','Secrétariat Bureautique'];
+  if(!DATA.config.niveaux)DATA.config.niveaux=['CPS 3 mois','CPS 6 mois','CPS 1 an','CAP 1','CAP 2','CAP 3','BT 1','BT 2','BT 3','BTS 1','BTS 2'];
+  if(!DATA.config.salles)DATA.config.salles=[{nom:'Cuisine A',type:'Cuisine / Atelier',cap:20,filiere:'Restauration'},{nom:'Cuisine B',type:'Cuisine / Atelier',cap:15,filiere:'Pâtisserie'},{nom:'Atelier Couture',type:'Atelier Couture',cap:25,filiere:'Couture'},{nom:'Salle 1',type:'Salle de cours',cap:30,filiere:''},{nom:'Salle Informatique',type:'Salle informatique',cap:20,filiere:'Secrétariat Bureautique'}];
+  if(!DATA.config.utilisateurs)DATA.config.utilisateurs=[{prenom:'Amadou Ousmane',nom:'Sall',login:'sg.sall',role:'sg',pwd:'1234',acces:['presences','professeurs','edt','cahier','notes','rapports','config']}];
+  if(!DATA.config.periodes)DATA.config.periodes=[{nom:'1er Semestre',debut:'2024-10-01',fin:'2025-01-31'},{nom:'2ème Semestre',debut:'2025-02-01',fin:'2025-06-30'}];
+  if(!DATA.config.calendrier)DATA.config.calendrier=[{nom:'Rentrée scolaire',date:'2024-10-01'},{nom:'Examens S1',date:'2025-01-20'}];
+  if(!DATA.config.pwd)DATA.config.pwd='1234';
+
+  // Mettre à jour nom SG
+  const sgEl=document.querySelector('.user-name');
+  if(sgEl&&DATA.config.etablissement?.sg)sgEl.textContent=DATA.config.etablissement.sg;
+
+  const now=new Date();
+  document.getElementById('today-display').textContent=now.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  document.getElementById('ct-date').valueAsDate=now;
+  document.getElementById('n-date').valueAsDate=now;
+  updateDashboard();updateNavBadge();renderHistorique();renderQuickBtns();updateWeekLabel();
+  populateSelects();
+}
+
+window.addEventListener('click',e=>{if(e.target.classList.contains('modal-overlay'))e.target.classList.remove('open');});
+init();
+</script>
+</body>
+</html>
